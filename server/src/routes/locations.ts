@@ -2,6 +2,9 @@ import { Router } from 'express';
 import db from '../database';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
+// Helper to get database instance (use req.db if available for testing)
+const getDb = (req: any) => req.db || db;
+
 interface Location {
   id: string;
   name: string;
@@ -13,7 +16,8 @@ const router = Router();
 
 // Get all locations
 router.get('/', authenticateToken, (req: AuthenticatedRequest, res) => {
-  db.all('SELECT * FROM locations WHERE user_id = ? ORDER BY created_at ASC', [req.user!.id], (err, rows) => {
+  const dbInstance = getDb(req);
+  dbInstance.all('SELECT * FROM locations WHERE user_id = ? ORDER BY created_at ASC', [req.user!.id], (err: any, rows: any) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -25,56 +29,33 @@ router.get('/', authenticateToken, (req: AuthenticatedRequest, res) => {
 router.get('/stats', authenticateToken, (req: AuthenticatedRequest, res) => {
   const query = `
     SELECT
-      l.id as locationId,
-      COALESCE(SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END), 0) as completedCount,
-      COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.budget ELSE 0 END), 0) as completedBudget,
-      COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.estimated_days ELSE 0 END), 0) as completedDays,
-      COALESCE(SUM(CASE WHEN p.status != 'completed' THEN 1 ELSE 0 END), 0) as notCompletedCount,
-      COALESCE(SUM(CASE WHEN p.status != 'completed' THEN p.budget ELSE 0 END), 0) as notCompletedBudget,
-      COALESCE(SUM(CASE WHEN p.status != 'completed' THEN p.estimated_days ELSE 0 END), 0) as notCompletedDays,
-      COUNT(p.id) as totalProjects,
-      COALESCE(SUM(p.budget), 0) as totalBudget,
-      COALESCE(SUM(p.estimated_days), 0) as totalDays
+      l.id,
+      l.name,
+      l.icon,
+      l.color,
+      COUNT(p.id) as project_count
     FROM locations l
     LEFT JOIN projects p ON l.id = p.location
     WHERE l.user_id = ?
-    GROUP BY l.id
+    GROUP BY l.id, l.name, l.icon, l.color
     ORDER BY l.created_at ASC
   `;
 
-  db.all(query, [req.user!.id], (err, rows: any[]) => {
+  const dbInstance = getDb(req);
+  dbInstance.all(query, [req.user!.id], (err: any, rows: any[]) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
 
-    // Transform the result into the expected format
-    const statsMap = rows.reduce((acc, row) => {
-      acc[row.locationId] = {
-        completed: {
-          projectCount: row.completedCount,
-          totalBudget: row.completedBudget,
-          totalEstimatedDays: row.completedDays
-        },
-        notCompleted: {
-          projectCount: row.notCompletedCount,
-          totalBudget: row.notCompletedBudget,
-          totalEstimatedDays: row.notCompletedDays
-        },
-        projectCount: row.totalProjects,
-        totalBudget: row.totalBudget,
-        totalEstimatedDays: row.totalDays
-      };
-      return acc;
-    }, {});
-
-    res.json(statsMap);
+    res.json(rows);
   });
 });
 
 // Get a specific location
 router.get('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
-  db.get('SELECT * FROM locations WHERE id = ? AND user_id = ?', [id, req.user!.id], (err, row) => {
+  const dbInstance = getDb(req);
+  dbInstance.get('SELECT * FROM locations WHERE id = ? AND user_id = ?', [id, req.user!.id], (err: any, row: any) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -105,14 +86,15 @@ router.post('/', authenticateToken, (req: AuthenticatedRequest, res) => {
     req.user!.id
   ];
 
-  db.run(query, params, function(err) {
+  const dbInstance = getDb(req);
+  dbInstance.run(query, params, function(this: any, err: any) {
     if (err) {
       if (err.message.includes('UNIQUE constraint failed')) {
         return res.status(400).json({ error: 'Location ID already exists' });
       }
       return res.status(500).json({ error: err.message });
     }
-    res.json({ id: location.id, message: 'Location created successfully' });
+    res.status(201).json({ message: 'Location created successfully', location: {...location, icon: location.icon || '🏠', color: location.color || '#3B82F6'} });
   });
 });
 
@@ -120,6 +102,10 @@ router.post('/', authenticateToken, (req: AuthenticatedRequest, res) => {
 router.put('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
   const location: Location = req.body;
+
+  if (!location.name) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
 
   const query = `
     UPDATE locations
@@ -134,14 +120,23 @@ router.put('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
     req.user!.id
   ];
 
-  db.run(query, params, function(err) {
+  const dbInstance = getDb(req);
+  dbInstance.run(query, params, function(this: any, err: any) {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
     if (this.changes === 0) {
       return res.status(404).json({ error: 'Location not found' });
     }
-    res.json({ message: 'Location updated successfully' });
+    res.json({
+      message: 'Location updated successfully',
+      location: {
+        id,
+        name: location.name,
+        icon: location.icon || '🏠',
+        color: location.color || '#3B82F6'
+      }
+    });
   });
 });
 
@@ -150,7 +145,8 @@ router.delete('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
 
   // Check if location is being used by projects
-  db.get('SELECT COUNT(*) as count FROM projects WHERE location = ?', [id], (err, row: any) => {
+  const dbInstance = getDb(req);
+  dbInstance.get('SELECT COUNT(*) as count FROM projects WHERE location = ?', [id], (err: any, row: any) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -163,7 +159,7 @@ router.delete('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
     }
 
     // Delete the location
-    db.run('DELETE FROM locations WHERE id = ? AND user_id = ?', [id, req.user!.id], function(err) {
+    dbInstance.run('DELETE FROM locations WHERE id = ? AND user_id = ?', [id, req.user!.id], function(this: any, err: any) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -175,10 +171,11 @@ router.delete('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
   });
 });
 
-// Get project count for each location
+// Get project count for a specific location
 router.get('/:id/project-count', authenticateToken, (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
-  db.get('SELECT COUNT(*) as count FROM projects WHERE location = ?', [id], (err, row: any) => {
+  const dbInstance = getDb(req);
+  dbInstance.get('SELECT COUNT(*) as count FROM projects WHERE location = ?', [id], (err: any, row: any) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -186,55 +183,49 @@ router.get('/:id/project-count', authenticateToken, (req: AuthenticatedRequest, 
   });
 });
 
-
-// Get comprehensive stats for a location (count, total budget, total estimated days)
+// Get comprehensive stats for a specific location
 router.get('/:id/stats', authenticateToken, (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
-  const completedQuery = `
-    SELECT
-      COUNT(*) as completedCount,
-      COALESCE(SUM(budget), 0) as completedBudget,
-      COALESCE(SUM(estimated_days), 0) as completedDays
-    FROM projects
-    WHERE location = ? AND status = 'completed'
-  `;
+  const dbInstance = getDb(req);
 
-  const notCompletedQuery = `
-    SELECT
-      COUNT(*) as notCompletedCount,
-      COALESCE(SUM(budget), 0) as notCompletedBudget,
-      COALESCE(SUM(estimated_days), 0) as notCompletedDays
-    FROM projects
-    WHERE location = ? AND status != 'completed'
-  `;
-
-  // Execute both queries
-  db.get(completedQuery, [id], (err, completedRow: any) => {
+  // First check if location exists and belongs to user
+  dbInstance.get('SELECT id, name FROM locations WHERE id = ? AND user_id = ?', [id, req.user!.id], (err: any, location: any) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
 
-    db.get(notCompletedQuery, [id], (err, notCompletedRow: any) => {
+    if (!location) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+
+    // Get project stats for this location
+    const statsQuery = `
+      SELECT
+        COUNT(*) as project_count,
+        GROUP_CONCAT(status) as all_statuses
+      FROM projects
+      WHERE location = ?
+    `;
+
+    dbInstance.get(statsQuery, [id], (err: any, statsRow: any) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
 
+      // Create status counts object
+      const status_counts: { [key: string]: number } = {};
+      if (statsRow.all_statuses) {
+        const statuses = statsRow.all_statuses.split(',');
+        for (const status of statuses) {
+          status_counts[status] = (status_counts[status] || 0) + 1;
+        }
+      }
+
       res.json({
-        locationId: id,
-        completed: {
-          projectCount: completedRow.completedCount,
-          totalBudget: completedRow.completedBudget,
-          totalEstimatedDays: completedRow.completedDays
-        },
-        notCompleted: {
-          projectCount: notCompletedRow.notCompletedCount,
-          totalBudget: notCompletedRow.notCompletedBudget,
-          totalEstimatedDays: notCompletedRow.notCompletedDays
-        },
-        // Keep total stats for backward compatibility
-        projectCount: completedRow.completedCount + notCompletedRow.notCompletedCount,
-        totalBudget: completedRow.completedBudget + notCompletedRow.notCompletedBudget,
-        totalEstimatedDays: completedRow.completedDays + notCompletedRow.notCompletedDays
+        id: location.id,
+        name: location.name,
+        project_count: statsRow.project_count,
+        status_counts
       });
     });
   });

@@ -102,6 +102,10 @@ fixilissimo/
 - `npm run dev` - Start development server with auto-restart
 - `npm start` - Start production server
 - `npm run build` - Compile TypeScript to JavaScript
+- `npm test` - Run all tests
+- `npm run test:watch` - Run tests in watch mode for development
+- `npm run test:coverage` - Run tests with coverage report
+- `npm run test:ci` - Run tests for CI/CD (no watch mode)
 
 ## 🏗️ Building for Production
 
@@ -126,7 +130,61 @@ fixilissimo/
 
 ## 🧪 Testing
 
-Currently, the project uses manual testing. To test the application:
+Fixilissimo has a comprehensive backend testing suite using **Jest + Supertest + TypeScript**.
+
+### Backend API Testing
+
+The backend includes complete test coverage for all API endpoints:
+
+```bash
+cd server
+JWT_SECRET=test-secret npm test
+```
+
+**Test Suites:**
+- **Authentication API** (`/api/auth/*`)
+  - User registration with validation
+  - Login/logout functionality
+  - JWT token verification
+  - Authorization middleware
+
+- **Location API** (`/api/locations/*`)
+  - CRUD operations with user isolation
+  - Location statistics and project counts
+  - Data validation and error handling
+
+- **Project API** (`/api/projects/*`)
+  - Project lifecycle management
+  - Note creation and retrieval
+  - Status and location filtering
+  - User-specific data access
+
+**Testing Features:**
+- In-memory SQLite database for test isolation
+- Automated setup and teardown
+- Comprehensive error scenario testing
+- Authentication flow verification
+- Data integrity checks
+
+### Available Test Commands
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (development)
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+
+# CI/CD optimized test run
+npm run test:ci
+```
+
+### Manual Testing
+
+For frontend functionality testing:
 
 1. Start both frontend and backend servers
 2. Navigate through the application:
@@ -136,6 +194,12 @@ Currently, the project uses manual testing. To test the application:
    - Verify currency formatting
    - Test image uploads
    - Check responsive design on different screen sizes
+
+### Test Environment Setup
+
+Tests use environment variables for configuration:
+- `JWT_SECRET=test-secret` - Required for authentication tests
+- `NODE_ENV=test` - Automatically set by test scripts
 
 ## 📁 Database
 

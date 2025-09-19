@@ -3,6 +3,9 @@ import db from '../database';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken, authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
+// Helper to get database instance (use req.db if available for testing)
+const getDb = (req: any) => req.db || db;
+
 const router = Router();
 
 interface User {
@@ -27,7 +30,8 @@ router.post('/register', async (req, res) => {
 
   try {
     // Check if username already exists
-    db.get('SELECT id FROM users WHERE username = ?', [username], async (err, row) => {
+    const dbInstance = getDb(req);
+    dbInstance.get('SELECT id FROM users WHERE username = ?', [username], async (err: any, row: any) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -39,10 +43,10 @@ router.post('/register', async (req, res) => {
       // Hash password and create user
       const passwordHash = await hashPassword(password);
 
-      db.run(
+      dbInstance.run(
         'INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)',
         [username, passwordHash, email || null],
-        function(err) {
+        function(this: any, err: any) {
           if (err) {
             return res.status(500).json({ error: err.message });
           }
@@ -72,7 +76,8 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    db.get('SELECT * FROM users WHERE username = ?', [username], async (err, row: User) => {
+    const dbInstance = getDb(req);
+    dbInstance.get('SELECT * FROM users WHERE username = ?', [username], async (err: any, row: User) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -111,7 +116,8 @@ router.get('/me', authenticateToken, (req: AuthenticatedRequest, res) => {
     return res.status(401).json({ error: 'User not authenticated' });
   }
 
-  db.get('SELECT id, username, email, created_at FROM users WHERE id = ?', [req.user.id], (err, row: User) => {
+  const dbInstance = getDb(req);
+  dbInstance.get('SELECT id, username, email, created_at FROM users WHERE id = ?', [req.user.id], (err: any, row: User) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }

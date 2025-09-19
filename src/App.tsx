@@ -9,8 +9,30 @@ import Authentication from './components/Authentication'
 import { useAuth } from './contexts/AuthContext'
 import { useApi } from './hooks/useAuthenticatedFetch'
 import { API_URLS } from './config/api'
-import type { Project, Location } from './types'
+interface Project {
+  id?: number;
+  name: string;
+  description?: string;
+  category?: string;
+  location?: string;
+  status?: 'planning' | 'in_progress' | 'completed' | 'on_hold';
+  start_month?: number;
+  start_year?: number;
+  budget?: number;
+  estimated_days?: number;
+  doer?: 'me' | 'pro';
+  image_filename?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
+interface Location {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  created_at?: string;
+}
 
 function App() {
   const { isAuthenticated, isLoading, user, logout } = useAuth()
