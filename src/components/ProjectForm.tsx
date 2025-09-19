@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Project, Location, Category } from '../types'
 import { useSettings, currencyConfig } from '../contexts/SettingsContext'
 import { API_URLS } from '../config/api'
+import { useApi } from '../hooks/useAuthenticatedFetch'
 
 interface ProjectFormProps {
   project?: Project | null
@@ -11,6 +12,7 @@ interface ProjectFormProps {
 
 const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
   const { settings } = useSettings()
+  const { get, post, put, postFormData } = useApi()
   const [formData, setFormData] = useState<Project>({
     name: '',
     description: '',
@@ -51,8 +53,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
 
   const fetchLocations = async () => {
     try {
-      const response = await fetch(API_URLS.LOCATIONS())
-      const data = await response.json()
+      const data = await get(API_URLS.LOCATIONS())
       setLocations(data)
       // Set default location if not editing and locations are available
       if (!project && data.length > 0 && !formData.location) {
@@ -65,8 +66,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
 
   const fetchCategories = async (locationId: string) => {
     try {
-      const response = await fetch(API_URLS.CATEGORIES_BY_LOCATION(locationId))
-      const data = await response.json()
+      const data = await get(API_URLS.CATEGORIES_BY_LOCATION(locationId))
       setCategories(data)
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -86,23 +86,15 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
     const method = project ? 'PUT' : 'POST'
 
     try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          budget: formData.budget || null,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(errorData.error || `Failed to save project: ${response.status} ${response.statusText}`)
+      const projectData = {
+        ...formData,
+        budget: formData.budget || null,
       }
 
-      const result = await response.json()
+      const result = project
+        ? await put(url, projectData)
+        : await post(url, projectData)
+
       const projectId = project ? project.id : result.id
 
       // Upload image if selected
@@ -126,14 +118,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
     formData.append('image', selectedImage)
 
     try {
-      const response = await fetch(API_URLS.PROJECT_IMAGE(projectId), {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to upload image: ${response.status} ${response.statusText}`)
-      }
+      await postFormData(API_URLS.PROJECT_IMAGE(projectId), formData)
     } catch (error) {
       console.error('Error uploading image:', error)
       // Note: We don't throw here to avoid blocking the form submission
