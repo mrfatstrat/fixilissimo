@@ -6,6 +6,7 @@ import { initDatabase } from './database';
 import projectRoutes from './routes/projects';
 import locationRoutes from './routes/locations';
 import categoryRoutes from './routes/categories';
+import authRoutes from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,6 +21,9 @@ const upload = multer({
 });
 
 initDatabase();
+
+// Auth routes (public)
+app.use('/api/auth', authRoutes);
 
 app.use('/api/projects', projectRoutes(upload));
 app.use('/api/locations', locationRoutes);

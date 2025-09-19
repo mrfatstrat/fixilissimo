@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import type { Project, Photo, Note, Location } from '../types'
 import { useSettings, formatCurrency } from '../contexts/SettingsContext'
+import { useApi } from '../hooks/useAuthenticatedFetch'
+import { API_URLS } from '../config/api'
 
 interface ProjectDetailProps {
   project: Project
@@ -11,6 +13,7 @@ interface ProjectDetailProps {
 
 const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps) => {
   const { settings } = useSettings()
+  const { get, post, postFormData } = useApi()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [notes, setNotes] = useState<Note[]>([])
   const [newNote, setNewNote] = useState('')
@@ -27,8 +30,7 @@ const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps
 
   const fetchLocations = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/locations')
-      const data = await response.json()
+      const data = await get(API_URLS.LOCATIONS())
       setLocations(data)
     } catch (error) {
       console.error('Error fetching locations:', error)
@@ -37,8 +39,7 @@ const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps
 
   const fetchPhotos = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/projects/${project.id}/photos`)
-      const data = await response.json()
+      const data = await get(API_URLS.PROJECT_PHOTOS(project.id!))
       setPhotos(data)
     } catch (error) {
       console.error('Error fetching photos:', error)
@@ -47,8 +48,7 @@ const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps
 
   const fetchNotes = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/projects/${project.id}/notes`)
-      const data = await response.json()
+      const data = await get(API_URLS.PROJECT_NOTES(project.id!))
       setNotes(data)
     } catch (error) {
       console.error('Error fetching notes:', error)
@@ -60,18 +60,11 @@ const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps
     if (!newNote.trim()) return
 
     try {
-      const response = await fetch(`http://localhost:3001/api/projects/${project.id}/notes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: newNote }),
+      await post(API_URLS.PROJECT_NOTES(project.id!), {
+        content: newNote
       })
-
-      if (response.ok) {
-        setNewNote('')
-        fetchNotes()
-      }
+      setNewNote('')
+      fetchNotes()
     } catch (error) {
       console.error('Error adding note:', error)
     }
@@ -83,16 +76,10 @@ const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps
     const formData = new FormData(form)
 
     try {
-      const response = await fetch(`http://localhost:3001/api/projects/${project.id}/photos`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (response.ok) {
-        setShowPhotoUpload(false)
-        fetchPhotos()
-        form.reset()
-      }
+      await postFormData(API_URLS.PROJECT_PHOTOS(project.id!), formData)
+      setShowPhotoUpload(false)
+      fetchPhotos()
+      form.reset()
     } catch (error) {
       console.error('Error uploading photo:', error)
     }
@@ -143,7 +130,7 @@ const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps
         {project.image_filename && (
           <div className="aspect-video bg-gray-100 overflow-hidden">
             <img
-              src={`http://localhost:3001/uploads/${project.image_filename}`}
+              src={API_URLS.UPLOAD_URL(project.image_filename)}
               alt={project.name}
               className="w-full h-full object-cover"
             />
@@ -308,7 +295,7 @@ const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps
                 {beforePhotos.map(photo => (
                   <div key={photo.id} className="relative">
                     <img
-                      src={`http://localhost:3001/uploads/${photo.filename}`}
+                      src={API_URLS.UPLOAD_URL(photo.filename)}
                       alt={photo.caption || 'Before photo'}
                       className="w-full h-32 object-cover rounded"
                     />
@@ -328,7 +315,7 @@ const ProjectDetail = ({ project, onBack, onEdit, onUpdate }: ProjectDetailProps
                 {afterPhotos.map(photo => (
                   <div key={photo.id} className="relative">
                     <img
-                      src={`http://localhost:3001/uploads/${photo.filename}`}
+                      src={API_URLS.UPLOAD_URL(photo.filename)}
                       alt={photo.caption || 'Progress photo'}
                       className="w-full h-32 object-cover rounded"
                     />

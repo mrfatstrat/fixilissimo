@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Location, Category } from '../types'
+import { useApi } from '../hooks/useAuthenticatedFetch'
+import { API_URLS } from '../config/api'
 
 interface LocationManagementProps {
   onBack: () => void
@@ -7,6 +9,7 @@ interface LocationManagementProps {
 }
 
 const LocationManagement = ({ onBack, onLocationUpdate }: LocationManagementProps) => {
+  const { get, post, put, del } = useApi()
   const [locations, setLocations] = useState<Location[]>([])
   const [categories, setCategories] = useState<Record<string, Category[]>>({})
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -39,8 +42,7 @@ const LocationManagement = ({ onBack, onLocationUpdate }: LocationManagementProp
 
   const fetchLocations = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/locations')
-      const data = await response.json()
+      const data = await get(API_URLS.LOCATIONS())
       setLocations(data)
     } catch (error) {
       console.error('Error fetching locations:', error)
@@ -49,8 +51,7 @@ const LocationManagement = ({ onBack, onLocationUpdate }: LocationManagementProp
 
   const fetchCategoriesForLocation = async (locationId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/categories/${locationId}`)
-      const data = await response.json()
+      const data = await get(API_URLS.CATEGORIES_BY_LOCATION(locationId))
       setCategories(prev => ({ ...prev, [locationId]: data }))
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -82,61 +83,38 @@ const LocationManagement = ({ onBack, onLocationUpdate }: LocationManagementProp
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const url = editingLocation
-      ? `http://localhost:3001/api/locations/${editingLocation.id}`
-      : 'http://localhost:3001/api/locations'
-
-    const method = editingLocation ? 'PUT' : 'POST'
-
     try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (response.ok) {
-        fetchLocations()
-        onLocationUpdate()
-        setIsFormOpen(false)
-        // If creating a new location, fetch its categories
-        if (!editingLocation) {
-          fetchCategoriesForLocation(formData.id)
-        }
+      if (editingLocation) {
+        await put(API_URLS.LOCATION_BY_ID(editingLocation.id), formData)
       } else {
-        const error = await response.json()
-        alert(error.error || 'Error saving location')
+        await post(API_URLS.LOCATIONS(), formData)
+      }
+
+      fetchLocations()
+      onLocationUpdate()
+      setIsFormOpen(false)
+      // If creating a new location, fetch its categories
+      if (!editingLocation) {
+        fetchCategoriesForLocation(formData.id)
       }
     } catch (error) {
       console.error('Error saving location:', error)
-      alert('Error saving location')
     }
   }
 
   const handleDeleteLocation = async (locationId: string) => {
     if (window.confirm('Are you sure you want to delete this location?')) {
       try {
-        const response = await fetch(`http://localhost:3001/api/locations/${locationId}`, {
-          method: 'DELETE',
+        await del(API_URLS.LOCATION_BY_ID(locationId))
+        fetchLocations()
+        onLocationUpdate()
+        setCategories(prev => {
+          const newCategories = { ...prev }
+          delete newCategories[locationId]
+          return newCategories
         })
-
-        if (response.ok) {
-          fetchLocations()
-          onLocationUpdate()
-          setCategories(prev => {
-            const newCategories = { ...prev }
-            delete newCategories[locationId]
-            return newCategories
-          })
-        } else {
-          const error = await response.json()
-          alert(error.error || 'Error deleting location')
-        }
       } catch (error) {
         console.error('Error deleting location:', error)
-        alert('Error deleting location')
       }
     }
   }
@@ -146,43 +124,23 @@ const LocationManagement = ({ onBack, onLocationUpdate }: LocationManagementProp
     if (!selectedLocationForCategories || !newCategoryName.trim()) return
 
     try {
-      const response = await fetch(`http://localhost:3001/api/categories/${selectedLocationForCategories}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newCategoryName.trim() }),
+      await post(API_URLS.CATEGORIES_BY_LOCATION(selectedLocationForCategories), {
+        name: newCategoryName.trim()
       })
-
-      if (response.ok) {
-        fetchCategoriesForLocation(selectedLocationForCategories)
-        setNewCategoryName('')
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Error adding category')
-      }
+      fetchCategoriesForLocation(selectedLocationForCategories)
+      setNewCategoryName('')
     } catch (error) {
       console.error('Error adding category:', error)
-      alert('Error adding category')
     }
   }
 
   const handleDeleteCategory = async (locationId: string, categoryId: number) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
       try {
-        const response = await fetch(`http://localhost:3001/api/categories/${locationId}/${categoryId}`, {
-          method: 'DELETE',
-        })
-
-        if (response.ok) {
-          fetchCategoriesForLocation(locationId)
-        } else {
-          const error = await response.json()
-          alert(error.error || 'Error deleting category')
-        }
+        await del(API_URLS.CATEGORY_BY_LOCATION_AND_ID(locationId, categoryId))
+        fetchCategoriesForLocation(locationId)
       } catch (error) {
         console.error('Error deleting category:', error)
-        alert('Error deleting category')
       }
     }
   }

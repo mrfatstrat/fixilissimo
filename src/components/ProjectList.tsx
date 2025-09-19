@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Project, Location } from '../types'
 import { useSettings, formatCurrencyWholeNumber } from '../contexts/SettingsContext'
 import { API_URLS } from '../config/api'
+import { useApi } from '../hooks/useAuthenticatedFetch'
 
 interface ProjectListProps {
   projects: Project[]
@@ -16,6 +17,7 @@ interface ProjectListProps {
 
 const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate, selectedLocation, currentLocation, onBackToLocations, onCreateProject }: ProjectListProps) => {
   const { settings } = useSettings()
+  const { get, del } = useApi()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [categoryFilter, setCategoryFilter] = useState<string[]>([])
@@ -29,9 +31,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
   const handleDeleteProject = async (projectId: number) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
       try {
-        await fetch(API_URLS.PROJECT_BY_ID(projectId), {
-          method: 'DELETE',
-        })
+        await del(API_URLS.PROJECT_BY_ID(projectId))
         onProjectUpdate()
       } catch (error) {
         console.error('Error deleting project:', error)
@@ -84,8 +84,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
 
   const fetchLocations = async () => {
     try {
-      const response = await fetch(API_URLS.LOCATIONS())
-      const data = await response.json()
+      const data = await get(API_URLS.LOCATIONS())
       setLocations(data)
     } catch (error) {
       console.error('Error fetching locations:', error)
@@ -94,8 +93,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
 
   const fetchLocationCategories = async (locationId: string) => {
     try {
-      const response = await fetch(API_URLS.CATEGORIES_BY_LOCATION(locationId))
-      const data = await response.json()
+      const data = await get(API_URLS.CATEGORIES_BY_LOCATION(locationId))
       setCategories(data)
     } catch (error) {
       console.error('Error fetching categories:', error)

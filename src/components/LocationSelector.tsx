@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import type { Location } from '../types'
 import { useSettings, formatCurrencyWholeNumber } from '../contexts/SettingsContext'
 import { API_URLS } from '../config/api'
+import { useApi } from '../hooks/useAuthenticatedFetch'
+import type { Location } from '../types'
+
 
 interface LocationSelectorProps {
   onLocationSelect: (locationId: string) => void
@@ -10,6 +12,7 @@ interface LocationSelectorProps {
 
 const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelectorProps) => {
   const { settings } = useSettings()
+  const { get } = useApi()
 
   const [locations, setLocations] = useState<Location[]>([])
   const [locationStats, setLocationStats] = useState<Record<string, {
@@ -37,24 +40,12 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
   const fetchLocations = async () => {
     try {
       setError(null)
-      const response = await fetch(API_URLS.LOCATIONS())
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch locations: ${response.status} ${response.statusText}`)
-      }
-
-      const data = await response.json()
+      const data = await get(API_URLS.LOCATIONS())
       setLocations(data)
 
       // Fetch comprehensive stats for all locations in one call
       try {
-        const statsResponse = await fetch(API_URLS.LOCATION_STATS())
-
-        if (!statsResponse.ok) {
-          throw new Error(`Failed to fetch location stats: ${statsResponse.status} ${statsResponse.statusText}`)
-        }
-
-        const statsData = await statsResponse.json()
+        const statsData = await get(API_URLS.LOCATION_STATS())
         setLocationStats(statsData)
       } catch (error) {
         console.error('Error fetching location stats:', error)

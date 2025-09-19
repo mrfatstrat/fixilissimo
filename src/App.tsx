@@ -5,9 +5,17 @@ import ProjectDetail from './components/ProjectDetail'
 import LocationSelector from './components/LocationSelector'
 import LocationManagement from './components/LocationManagement'
 import Settings from './components/Settings'
+import Authentication from './components/Authentication'
+import { useAuth } from './contexts/AuthContext'
+import { useApi } from './hooks/useAuthenticatedFetch'
+import { API_URLS } from './config/api'
 import type { Project, Location } from './types'
 
+
 function App() {
+  const { isAuthenticated, isLoading, user, logout } = useAuth()
+  const { get } = useApi()
+
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
@@ -17,18 +25,10 @@ function App() {
   const [view, setView] = useState<'locations' | 'projects' | 'location-management'>('locations')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
-  useEffect(() => {
-    if (selectedLocation) {
-      fetchProjects()
-      fetchCurrentLocation()
-    }
-  }, [selectedLocation])
-
   const fetchProjects = async () => {
     if (!selectedLocation) return
     try {
-      const response = await fetch(`http://localhost:3001/api/projects?location=${selectedLocation}`)
-      const data = await response.json()
+      const data = await get(`${API_URLS.PROJECTS()}?location=${selectedLocation}`)
       setProjects(data)
     } catch (error) {
       console.error('Error fetching projects:', error)
@@ -38,12 +38,36 @@ function App() {
   const fetchCurrentLocation = async () => {
     if (!selectedLocation) return
     try {
-      const response = await fetch(`http://localhost:3001/api/locations/${selectedLocation}`)
-      const data = await response.json()
+      const data = await get(API_URLS.LOCATION_BY_ID(selectedLocation))
       setCurrentLocation(data)
     } catch (error) {
       console.error('Error fetching location:', error)
     }
+  }
+
+  // All hooks must be called before any conditional logic
+  useEffect(() => {
+    if (isAuthenticated && selectedLocation) {
+      fetchProjects()
+      fetchCurrentLocation()
+    }
+  }, [selectedLocation, isAuthenticated])
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show authentication screen if not logged in
+  if (!isAuthenticated) {
+    return <Authentication />
   }
 
   const handleCreateProject = () => {
@@ -119,6 +143,22 @@ function App() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {user && (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                    Welcome, {user.username}
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors duration-200"
+                    title="Logout"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </button>
+                </div>
+              )}
               {view === 'locations' && (
                 <button
                   onClick={() => setIsSettingsOpen(true)}

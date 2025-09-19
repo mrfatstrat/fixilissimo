@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import db from '../database';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
 interface Location {
   id: string;
@@ -11,8 +12,8 @@ interface Location {
 const router = Router();
 
 // Get all locations
-router.get('/', (req, res) => {
-  db.all('SELECT * FROM locations ORDER BY created_at ASC', [], (err, rows) => {
+router.get('/', authenticateToken, (req: AuthenticatedRequest, res) => {
+  db.all('SELECT * FROM locations WHERE user_id = ? ORDER BY created_at ASC', [req.user!.id], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -20,121 +21,8 @@ router.get('/', (req, res) => {
   });
 });
 
-// Get a specific location
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  db.get('SELECT * FROM locations WHERE id = ?', [id], (err, row) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (!row) {
-      return res.status(404).json({ error: 'Location not found' });
-    }
-    res.json(row);
-  });
-});
-
-// Create a new location
-router.post('/', (req, res) => {
-  const location: Location = req.body;
-
-  if (!location.id || !location.name) {
-    return res.status(400).json({ error: 'ID and name are required' });
-  }
-
-  const query = `
-    INSERT INTO locations (id, name, icon, color)
-    VALUES (?, ?, ?, ?)
-  `;
-  const params = [
-    location.id,
-    location.name,
-    location.icon || '🏠',
-    location.color || '#3B82F6'
-  ];
-
-  db.run(query, params, function(err) {
-    if (err) {
-      if (err.message.includes('UNIQUE constraint failed')) {
-        return res.status(400).json({ error: 'Location ID already exists' });
-      }
-      return res.status(500).json({ error: err.message });
-    }
-    res.json({ id: location.id, message: 'Location created successfully' });
-  });
-});
-
-// Update a location
-router.put('/:id', (req, res) => {
-  const { id } = req.params;
-  const location: Location = req.body;
-
-  const query = `
-    UPDATE locations
-    SET name = ?, icon = ?, color = ?
-    WHERE id = ?
-  `;
-  const params = [
-    location.name,
-    location.icon || '🏠',
-    location.color || '#3B82F6',
-    id
-  ];
-
-  db.run(query, params, function(err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Location not found' });
-    }
-    res.json({ message: 'Location updated successfully' });
-  });
-});
-
-// Delete a location
-router.delete('/:id', (req, res) => {
-  const { id } = req.params;
-
-  // Check if location is being used by projects
-  db.get('SELECT COUNT(*) as count FROM projects WHERE location = ?', [id], (err, row: any) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-
-    if (row.count > 0) {
-      return res.status(400).json({
-        error: 'Cannot delete location that is being used by projects',
-        projectCount: row.count
-      });
-    }
-
-    // Delete the location
-    db.run('DELETE FROM locations WHERE id = ?', [id], function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Location not found' });
-      }
-      res.json({ message: 'Location deleted successfully' });
-    });
-  });
-});
-
-// Get project count for each location
-router.get('/:id/project-count', (req, res) => {
-  const { id } = req.params;
-  db.get('SELECT COUNT(*) as count FROM projects WHERE location = ?', [id], (err, row: any) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json({ locationId: id, projectCount: row.count });
-  });
-});
-
 // Get bulk stats for all locations (optimized single call)
-router.get('/stats', (req, res) => {
+router.get('/stats', authenticateToken, (req: AuthenticatedRequest, res) => {
   const query = `
     SELECT
       l.id as locationId,
@@ -149,11 +37,12 @@ router.get('/stats', (req, res) => {
       COALESCE(SUM(p.estimated_days), 0) as totalDays
     FROM locations l
     LEFT JOIN projects p ON l.id = p.location
+    WHERE l.user_id = ?
     GROUP BY l.id
     ORDER BY l.created_at ASC
   `;
 
-  db.all(query, [], (err, rows: any[]) => {
+  db.all(query, [req.user!.id], (err, rows: any[]) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -182,8 +71,124 @@ router.get('/stats', (req, res) => {
   });
 });
 
+// Get a specific location
+router.get('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const { id } = req.params;
+  db.get('SELECT * FROM locations WHERE id = ? AND user_id = ?', [id, req.user!.id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+    res.json(row);
+  });
+});
+
+// Create a new location
+router.post('/', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const location: Location = req.body;
+
+  if (!location.id || !location.name) {
+    return res.status(400).json({ error: 'ID and name are required' });
+  }
+
+  const query = `
+    INSERT INTO locations (id, name, icon, color, user_id)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  const params = [
+    location.id,
+    location.name,
+    location.icon || '🏠',
+    location.color || '#3B82F6',
+    req.user!.id
+  ];
+
+  db.run(query, params, function(err) {
+    if (err) {
+      if (err.message.includes('UNIQUE constraint failed')) {
+        return res.status(400).json({ error: 'Location ID already exists' });
+      }
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ id: location.id, message: 'Location created successfully' });
+  });
+});
+
+// Update a location
+router.put('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const { id } = req.params;
+  const location: Location = req.body;
+
+  const query = `
+    UPDATE locations
+    SET name = ?, icon = ?, color = ?
+    WHERE id = ? AND user_id = ?
+  `;
+  const params = [
+    location.name,
+    location.icon || '🏠',
+    location.color || '#3B82F6',
+    id,
+    req.user!.id
+  ];
+
+  db.run(query, params, function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+    res.json({ message: 'Location updated successfully' });
+  });
+});
+
+// Delete a location
+router.delete('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const { id } = req.params;
+
+  // Check if location is being used by projects
+  db.get('SELECT COUNT(*) as count FROM projects WHERE location = ?', [id], (err, row: any) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (row.count > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete location that is being used by projects',
+        projectCount: row.count
+      });
+    }
+
+    // Delete the location
+    db.run('DELETE FROM locations WHERE id = ? AND user_id = ?', [id, req.user!.id], function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Location not found' });
+      }
+      res.json({ message: 'Location deleted successfully' });
+    });
+  });
+});
+
+// Get project count for each location
+router.get('/:id/project-count', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const { id } = req.params;
+  db.get('SELECT COUNT(*) as count FROM projects WHERE location = ?', [id], (err, row: any) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ locationId: id, projectCount: row.count });
+  });
+});
+
+
 // Get comprehensive stats for a location (count, total budget, total estimated days)
-router.get('/:id/stats', (req, res) => {
+router.get('/:id/stats', authenticateToken, (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
   const completedQuery = `
     SELECT
