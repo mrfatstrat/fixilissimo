@@ -5,6 +5,9 @@ import path from 'path';
 import fs from 'fs';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
+// Helper to get database instance (use req.db if available for testing)
+const getDb = (req: any) => req.db || db;
+
 interface Project {
   id?: number;
   name: string;
@@ -50,7 +53,8 @@ export default function projectRoutes(upload: Multer) {
 
     query += ' ORDER BY updated_at DESC';
 
-    db.all(query, params, (err, rows) => {
+    const dbInstance = getDb(req);
+    dbInstance.all(query, params, (err: any, rows: any) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -60,7 +64,8 @@ export default function projectRoutes(upload: Multer) {
 
   router.get('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
-    db.get('SELECT * FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err, row) => {
+    const dbInstance = getDb(req);
+    dbInstance.get('SELECT * FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err: any, row: any) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -73,6 +78,11 @@ export default function projectRoutes(upload: Multer) {
 
   router.post('/', authenticateToken, (req: AuthenticatedRequest, res) => {
     const project: Project = req.body;
+
+    if (!project.name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
     const query = `
       INSERT INTO projects (name, description, category, location, status, start_month, start_year, budget, estimated_days, doer, image_filename, user_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -92,17 +102,36 @@ export default function projectRoutes(upload: Multer) {
       req.user!.id
     ];
 
-    db.run(query, params, function(err) {
+    const dbInstance = getDb(req);
+    dbInstance.run(query, params, function(this: any, err: any) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
-      res.json({ id: this.lastID, message: 'Project created successfully' });
+      res.status(201).json({
+        message: 'Project created successfully',
+        project: {
+          id: this.lastID,
+          name: project.name,
+          description: project.description || null,
+          category: project.category || null,
+          location: project.location || 'home',
+          status: project.status || 'planning',
+          budget: project.budget || null,
+          estimated_days: project.estimated_days || null,
+          doer: project.doer || 'me'
+        }
+      });
     });
   });
 
   router.put('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
     const project: Project = req.body;
+
+    if (!project.name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
     const query = `
       UPDATE projects
       SET name = ?, description = ?, category = ?, location = ?, status = ?, start_month = ?, start_year = ?, budget = ?, estimated_days = ?, doer = ?, image_filename = ?, updated_at = CURRENT_TIMESTAMP
@@ -124,20 +153,31 @@ export default function projectRoutes(upload: Multer) {
       req.user!.id
     ];
 
-    db.run(query, params, function(err) {
+    const dbInstance = getDb(req);
+    dbInstance.run(query, params, function(this: any, err: any) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
       if (this.changes === 0) {
         return res.status(404).json({ error: 'Project not found' });
       }
-      res.json({ message: 'Project updated successfully' });
+      res.json({
+        message: 'Project updated successfully',
+        project: {
+          id: parseInt(id),
+          name: project.name,
+          description: project.description || null,
+          budget: project.budget || null,
+          status: project.status || 'planning'
+        }
+      });
     });
   });
 
   router.delete('/:id', authenticateToken, (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
-    db.run('DELETE FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], function(err) {
+    const dbInstance = getDb(req);
+    dbInstance.run('DELETE FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], function(this: any, err: any) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -150,8 +190,9 @@ export default function projectRoutes(upload: Multer) {
 
   router.get('/:id/photos', authenticateToken, (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
+    const dbInstance = getDb(req);
     // First verify project belongs to user
-    db.get('SELECT id FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err, project) => {
+    dbInstance.get('SELECT id FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err: any, project: any) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -159,7 +200,7 @@ export default function projectRoutes(upload: Multer) {
         return res.status(404).json({ error: 'Project not found' });
       }
 
-      db.all('SELECT * FROM photos WHERE project_id = ? ORDER BY upload_date DESC', [id], (err, rows) => {
+      dbInstance.all('SELECT * FROM photos WHERE project_id = ? ORDER BY upload_date DESC', [id], (err: any, rows: any) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
@@ -176,8 +217,9 @@ export default function projectRoutes(upload: Multer) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    const dbInstance = getDb(req);
     // First verify project belongs to user
-    db.get('SELECT id FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err, project) => {
+    dbInstance.get('SELECT id FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err: any, project: any) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -188,7 +230,7 @@ export default function projectRoutes(upload: Multer) {
       const query = 'INSERT INTO photos (project_id, filename, original_name, caption, is_before_photo) VALUES (?, ?, ?, ?, ?)';
       const params = [id, req.file!.filename, req.file!.originalname, caption || null, is_before_photo === 'true' ? 1 : 0];
 
-      db.run(query, params, function(err) {
+      dbInstance.run(query, params, function(this: any, err: any) {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
@@ -199,8 +241,9 @@ export default function projectRoutes(upload: Multer) {
 
   router.get('/:id/notes', authenticateToken, (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
+    const dbInstance = getDb(req);
     // First verify project belongs to user
-    db.get('SELECT id FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err, project) => {
+    dbInstance.get('SELECT id FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err: any, project: any) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -208,7 +251,7 @@ export default function projectRoutes(upload: Multer) {
         return res.status(404).json({ error: 'Project not found' });
       }
 
-      db.all('SELECT * FROM notes WHERE project_id = ? ORDER BY created_at DESC', [id], (err, rows) => {
+      dbInstance.all('SELECT * FROM notes WHERE project_id = ? ORDER BY created_at DESC', [id], (err: any, rows: any) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
@@ -225,8 +268,9 @@ export default function projectRoutes(upload: Multer) {
       return res.status(400).json({ error: 'Content is required' });
     }
 
+    const dbInstance = getDb(req);
     // First verify project belongs to user
-    db.get('SELECT id FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err, project) => {
+    dbInstance.get('SELECT id FROM projects WHERE id = ? AND user_id = ?', [id, req.user!.id], (err: any, project: any) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -235,11 +279,27 @@ export default function projectRoutes(upload: Multer) {
       }
 
       const query = 'INSERT INTO notes (project_id, content) VALUES (?, ?)';
-      db.run(query, [id, content], function(err) {
+      dbInstance.run(query, [id, content], function(this: any, err: any) {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
-        res.json({ id: this.lastID, message: 'Note added successfully' });
+
+        // Get the created note with timestamp
+        const noteId = this.lastID;
+        dbInstance.get('SELECT * FROM notes WHERE id = ?', [noteId], (err: any, note: any) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          res.status(201).json({
+            message: 'Note added successfully',
+            note: {
+              id: note.id,
+              project_id: parseInt(id),
+              content: note.content,
+              created_at: note.created_at
+            }
+          });
+        });
       });
     });
   });
@@ -253,7 +313,8 @@ export default function projectRoutes(upload: Multer) {
     }
 
     const query = 'UPDATE projects SET image_filename = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?';
-    db.run(query, [req.file.filename, id, req.user!.id], function(err) {
+    const dbInstance = getDb(req);
+    dbInstance.run(query, [req.file.filename, id, req.user!.id], function(this: any, err: any) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }

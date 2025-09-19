@@ -45,7 +45,7 @@ const initializeSchema = async (db: Database): Promise<void> => {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
       email TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -131,7 +131,7 @@ export const seedTestData = async (db: Database): Promise<{ userId: number; toke
 
   return new Promise((resolve, reject) => {
     db.run(
-      'INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
+      'INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)',
       ['testuser', hashedPassword, 'test@example.com'],
       function(err) {
         if (err) {

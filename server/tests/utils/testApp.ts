@@ -1,5 +1,6 @@
 import express, { Application } from 'express';
 import cors from 'cors';
+import multer from 'multer';
 import { Database } from 'sqlite3';
 import { getTestDb } from '../setup';
 
@@ -24,10 +25,13 @@ export const createTestApp = (): Application => {
     next();
   });
 
+  // Set up multer for testing (memory storage)
+  const upload = multer({ storage: multer.memoryStorage() });
+
   // Routes
   app.use('/api/auth', authRoutes);
   app.use('/api/locations', locationRoutes);
-  app.use('/api/projects', projectRoutes);
+  app.use('/api/projects', projectRoutes(upload));
   app.use('/api/categories', categoryRoutes);
 
   // Error handling middleware

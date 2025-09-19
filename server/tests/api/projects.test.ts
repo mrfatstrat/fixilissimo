@@ -81,7 +81,7 @@ describe('Projects API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -158,7 +158,7 @@ describe('Projects API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -207,7 +207,7 @@ describe('Projects API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -281,7 +281,7 @@ describe('Projects API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -331,7 +331,7 @@ describe('Projects API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -398,7 +398,7 @@ describe('Projects API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -453,7 +453,7 @@ describe('Projects API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });

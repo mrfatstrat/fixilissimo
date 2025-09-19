@@ -19,7 +19,7 @@ describe('Authentication API', () => {
         .expect(201);
 
       expect(response.body).toMatchObject({
-        message: 'User registered successfully',
+        message: 'User created successfully',
         user: {
           username: userData.username,
           email: userData.email,
@@ -102,7 +102,7 @@ describe('Authentication API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Invalid credentials',
+        error: 'Invalid username or password',
       });
     });
 
@@ -118,7 +118,7 @@ describe('Authentication API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Invalid credentials',
+        error: 'Invalid username or password',
       });
     });
 
@@ -165,7 +165,7 @@ describe('Authentication API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
 
@@ -173,10 +173,10 @@ describe('Authentication API', () => {
       const response = await request(app)
         .get('/api/auth/me')
         .set('Authorization', 'Bearer invalid-token')
-        .expect(401);
+        .expect(403);
 
       expect(response.body).toMatchObject({
-        error: 'Invalid token',
+        error: 'Invalid or expired token',
       });
     });
   });
@@ -196,7 +196,7 @@ describe('Authentication API', () => {
         .expect(200);
 
       expect(response.body).toMatchObject({
-        message: 'Logout successful',
+        message: 'Logged out successfully',
       });
     });
 
@@ -206,7 +206,7 @@ describe('Authentication API', () => {
         .expect(200);
 
       expect(response.body).toMatchObject({
-        message: 'Logout successful',
+        message: 'Logged out successfully',
       });
     });
   });

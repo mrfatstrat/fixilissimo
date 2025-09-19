@@ -55,7 +55,7 @@ describe('Locations API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -122,7 +122,7 @@ describe('Locations API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -159,7 +159,7 @@ describe('Locations API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -222,15 +222,29 @@ describe('Locations API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
 
   describe('DELETE /api/locations/:id', () => {
     it('should delete existing location for authenticated user', async () => {
+      // Create a new location without projects for this test
+      const newLocationData = {
+        id: 'test-location',
+        name: 'Test Location',
+        icon: '🧪',
+        color: '#FF0000',
+      };
+
+      await request(app)
+        .post('/api/locations')
+        .set(getAuthHeaders(authToken))
+        .send(newLocationData)
+        .expect(201);
+
       const response = await request(app)
-        .delete('/api/locations/living-room')
+        .delete('/api/locations/test-location')
         .set(getAuthHeaders(authToken))
         .expect(200);
 
@@ -240,7 +254,7 @@ describe('Locations API', () => {
 
       // Verify location is deleted
       await request(app)
-        .get('/api/locations/living-room')
+        .get('/api/locations/test-location')
         .set(getAuthHeaders(authToken))
         .expect(404);
     });
@@ -262,7 +276,7 @@ describe('Locations API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -289,7 +303,7 @@ describe('Locations API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
@@ -326,7 +340,7 @@ describe('Locations API', () => {
         .expect(401);
 
       expect(response.body).toMatchObject({
-        error: 'Authentication required',
+        error: 'Access token required',
       });
     });
   });
