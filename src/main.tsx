@@ -1,16 +1,16 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
-import { SettingsProvider } from './contexts/SettingsContext.tsx'
-import { AuthProvider } from './contexts/AuthContext.tsx'
+import { AuthProvider } from './contexts/AuthContext'
+import { SettingsProvider } from './contexts/SettingsContext'
+import './index.css'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <SettingsProvider>
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <SettingsProvider>
+      <AuthProvider>
         <App />
-      </SettingsProvider>
-    </AuthProvider>
-  </StrictMode>,
+      </AuthProvider>
+    </SettingsProvider>
+  </React.StrictMode>,
 )

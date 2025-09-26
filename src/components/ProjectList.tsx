@@ -1,4 +1,29 @@
 import { useState, useEffect } from 'react'
+import {
+  ChevronDown,
+  Check,
+  Edit3,
+  Trash2,
+  Tag,
+  DollarSign,
+  Clock,
+  Calendar,
+  Search,
+  Plus,
+  Building2,
+  Home,
+  Mountain,
+  Waves,
+  TreePine,
+  Castle,
+  Factory,
+  Anchor,
+  Ship,
+  MapPin,
+  ChevronLeft,
+  Filter,
+  X
+} from 'lucide-react'
 import type { Project, Location } from '../types'
 import { useSettings, formatCurrencyWholeNumber } from '../contexts/SettingsContext'
 import { API_URLS } from '../config/api'
@@ -101,9 +126,31 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
     }
   }
 
+  // Map emoji icons to lucide icons
+  const getLocationIcon = (icon: string) => {
+    const iconMap: Record<string, React.ComponentType<any>> = {
+      '🏠': Home,
+      '🏢': Building2,
+      '🏔️': Mountain,
+      '🌊': Waves,
+      '🌲': TreePine,
+      '🏰': Castle,
+      '🏭': Factory,
+      '⚓': Anchor,
+      '🚢': Ship,
+      '⛵': Ship,
+      '🏖️': Waves,
+      '🏗️': Building2,
+      '🏘️': Home,
+      '🏡': Home,
+      '🏛️': Castle,
+    }
+    return iconMap[icon] || MapPin
+  }
+
   const getLocationDisplay = (locationId?: string) => {
     const location = locations.find(loc => loc.id === locationId)
-    return location ? { icon: location.icon, label: location.name } : { icon: '🏠', label: 'Unknown' }
+    return location ? { IconComponent: getLocationIcon(location.icon), label: location.name, color: location.color } : { IconComponent: Home, label: 'Unknown', color: '#6B7280' }
   }
 
   const projectCategories = [...new Set(projects.map(p => p.category).filter(Boolean))]
@@ -148,10 +195,9 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
             <button
               onClick={onBackToLocations}
               className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors duration-200"
+              title="Back to locations"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft size={20} />
             </button>
 
             {currentLocation && (
@@ -160,7 +206,10 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                   className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
                   style={{ backgroundColor: currentLocation.color + '20', borderColor: currentLocation.color + '30' }}
                 >
-                  <span className="text-2xl">{currentLocation.icon}</span>
+                  {(() => {
+                    const IconComponent = getLocationIcon(currentLocation.icon)
+                    return <IconComponent size={24} style={{ color: currentLocation.color }} />
+                  })()}
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
@@ -175,9 +224,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
             onClick={onCreateProject}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center space-x-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus size={20} />
             <span>New Project</span>
           </button>
         </div>
@@ -185,9 +232,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
         {/* Search and Filter Bar */}
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
-            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search projects..."
@@ -218,14 +263,12 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                         }}
                         className="ml-1 text-blue-600 hover:text-blue-800"
                       >
-                        ×
+                        <X size={12} />
                       </button>
                     </span>
                   ))
                 )}
-                <svg className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDown size={16} className="text-gray-400 ml-auto flex-shrink-0" />
               </div>
             </div>
             {statusDropdownOpen && (
@@ -243,9 +286,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                   >
                     {formatStatusLabel(status)}
                     {statusFilter.includes(status) && (
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check size={16} className="text-blue-600" />
                     )}
                   </button>
                 ))}
@@ -274,14 +315,12 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                         }}
                         className="ml-1 text-green-600 hover:text-green-800"
                       >
-                        ×
+                        <X size={12} />
                       </button>
                     </span>
                   ))
                 )}
-                <svg className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDown size={16} className="text-gray-400 ml-auto flex-shrink-0" />
               </div>
             </div>
             {categoryDropdownOpen && (
@@ -299,9 +338,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                   >
                     {category.name}
                     {categoryFilter.includes(category.name) && (
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check size={16} className="text-green-600" />
                     )}
                   </button>
                 ))}
@@ -330,14 +367,12 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                         }}
                         className="ml-1 text-purple-600 hover:text-purple-800"
                       >
-                        ×
+                        <X size={12} />
                       </button>
                     </span>
                   ))
                 )}
-                <svg className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDown size={16} className="text-gray-400 ml-auto flex-shrink-0" />
               </div>
             </div>
             {yearDropdownOpen && (
@@ -355,9 +390,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                   >
                     {year}
                     {yearFilter.includes(year?.toString() || '') && (
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check size={16} className="text-purple-600" />
                     )}
                   </button>
                 ))}
@@ -370,9 +403,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
       {filteredProjects.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
+            <Building2 size={40} className="text-gray-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">No projects found</h3>
           <p className="text-gray-500 max-w-md mx-auto">Create your first project to get started tracking your home improvements!</p>
@@ -403,8 +434,16 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                     <div className="flex items-center gap-2 flex-wrap">
                       {project.location && (
                         <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-slate-100/80 text-slate-700 border border-slate-200/50">
-                          <span className="mr-1">{getLocationDisplay(project.location).icon}</span>
-                          {getLocationDisplay(project.location).label}
+                          {(() => {
+                            const locationData = getLocationDisplay(project.location)
+                            const IconComponent = locationData.IconComponent
+                            return (
+                              <>
+                                <IconComponent size={14} className="mr-1" style={{ color: locationData.color }} />
+                                {locationData.label}
+                              </>
+                            )
+                          })()}
                         </span>
                       )}
                       {project.status && (
@@ -424,9 +463,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                       className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
                       title="Edit project"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
+                      <Edit3 size={16} />
                     </button>
                     <button
                       onClick={(e) => {
@@ -436,9 +473,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                       className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
                       title="Delete project"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
@@ -453,25 +488,19 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
                   <div className="flex items-center justify-between text-sm">
                     {project.category && (
                       <div className="flex items-center text-gray-500">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                        </svg>
+                        <Tag size={16} className="mr-1.5" />
                         {project.category}
                       </div>
                     )}
                     {project.budget && (
                       <div className="flex items-center text-green-600 font-medium">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
+                        <DollarSign size={16} className="mr-1" />
 {formatCurrencyWholeNumber(project.budget, settings.currency)}
                       </div>
                     )}
                     {project.estimated_days && (
                       <div className="flex items-center text-indigo-600 font-medium">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <Clock size={16} className="mr-1" />
                         {project.estimated_days} {project.estimated_days === 1 ? 'day' : 'days'}
                       </div>
                     )}
@@ -479,9 +508,7 @@ const ProjectList = ({ projects, onProjectSelect, onProjectEdit, onProjectUpdate
 
                   {(project.start_month && project.start_year) && (
                     <div className="flex items-center text-xs text-gray-500">
-                      <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                      <Calendar size={16} className="mr-1.5" />
 {new Date(0, project.start_month - 1).toLocaleString('default', { month: 'long' })} {project.start_year}
                     </div>
                   )}

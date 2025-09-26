@@ -1,4 +1,23 @@
 import { useState, useEffect } from 'react'
+import {
+  X,
+  AlertTriangle,
+  Check,
+  FileText,
+  Zap,
+  CheckCircle,
+  Pause,
+  Home,
+  Building2,
+  Mountain,
+  Waves,
+  TreePine,
+  Castle,
+  Factory,
+  Anchor,
+  Ship,
+  MapPin
+} from 'lucide-react'
 import type { Project, Location, Category } from '../types'
 import { useSettings, currencyConfig } from '../contexts/SettingsContext'
 import { API_URLS } from '../config/api'
@@ -13,6 +32,38 @@ interface ProjectFormProps {
 const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
   const { settings } = useSettings()
   const { get, post, put, postFormData } = useApi()
+
+  // Map emoji icons to lucide icons
+  const getLocationIcon = (icon: string) => {
+    const iconMap: Record<string, React.ComponentType<any>> = {
+      '🏠': Home,
+      '🏢': Building2,
+      '🏔️': Mountain,
+      '🌊': Waves,
+      '🌲': TreePine,
+      '🏰': Castle,
+      '🏭': Factory,
+      '⚓': Anchor,
+      '🚢': Ship,
+      '⛵': Ship,
+      '🏖️': Waves,
+      '🏗️': Building2,
+      '🏘️': Home,
+      '🏡': Home,
+      '🏛️': Castle,
+    }
+    return iconMap[icon] || MapPin
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'planning': return FileText
+      case 'in_progress': return Zap
+      case 'completed': return CheckCircle
+      case 'on_hold': return Pause
+      default: return FileText
+    }
+  }
   const [formData, setFormData] = useState<Project>({
     name: '',
     description: '',
@@ -160,9 +211,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
             onClick={onClose}
             className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors duration-200"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X size={20} />
           </button>
         </div>
 
@@ -233,11 +282,14 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
                   required
                 >
                   <option value="">Select location</option>
-                  {locations.map(location => (
-                    <option key={location.id} value={location.id}>
-                      {location.icon} {location.name}
-                    </option>
-                  ))}
+                  {locations.map(location => {
+                    const IconComponent = getLocationIcon(location.icon)
+                    return (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
 
@@ -252,10 +304,10 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
                   onChange={handleChange}
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white/70 backdrop-blur-sm transition-all duration-200 text-gray-900"
                 >
-                  <option value="planning">📝 Planning</option>
-                  <option value="in_progress">🚧 In Progress</option>
-                  <option value="completed">✅ Completed</option>
-                  <option value="on_hold">⏸️ On Hold</option>
+                  <option value="planning">Planning</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="on_hold">On Hold</option>
                 </select>
               </div>
             </div>
@@ -386,9 +438,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
             {submitError && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
                 <div className="flex items-start">
-                  <svg className="w-5 h-5 text-red-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
+                  <AlertTriangle size={20} className="text-red-600 mt-0.5 mr-3" />
                   <div>
                     <h4 className="text-red-800 font-medium">Error saving project</h4>
                     <p className="text-red-700 text-sm mt-1">{submitError}</p>
@@ -418,9 +468,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
                   </>
                 ) : (
                   <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Check size={20} />
                     <span>{project ? 'Update Project' : 'Create Project'}</span>
                   </>
                 )}

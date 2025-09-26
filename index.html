@@ -1,28 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fixilissimo - Home fix tracker</title>
+    <title>Fixilissimo - Home Improvement Tracker</title>
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      console.log('HTML script tag executed - JavaScript is working');
-      window.addEventListener('load', () => {
-        console.log('Window loaded, checking for React mount...');
-        setTimeout(() => {
-          const root = document.getElementById('root');
-          if (root && root.innerHTML.trim() === '') {
-            console.error('React failed to mount - root div is still empty');
-            root.innerHTML = '<div style="padding: 20px; background: #ff6b6b; color: white; font-family: Arial, sans-serif;"><h2>⚠️ React Failed to Mount</h2><p>The React application is not rendering. Check the browser console for errors.</p></div>';
-          } else {
-            console.log('React appears to have mounted successfully');
-          }
-        }, 2000);
-      });
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
