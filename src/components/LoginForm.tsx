@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Eye, EyeOff, Home } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import type { LoginCredentials } from '../types';
 
@@ -14,6 +15,7 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
   });
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login, isLoading } = useAuth();
 
@@ -47,9 +49,7 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
       <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-gray-200/50">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
+            <Home className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
             Welcome Back
@@ -84,16 +84,26 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
               Password
             </label>
-            <input
-              type="password"
-              id="password"
-              value={credentials.password}
-              onChange={handleInputChange('password')}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
-              placeholder="Enter your password"
-              required
-              autoComplete="current-password"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                value={credentials.password}
+                onChange={handleInputChange('password')}
+                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                placeholder="Enter your password"
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg p-1"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <button
@@ -110,6 +120,19 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
               'Sign In'
             )}
           </button>
+
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200 underline"
+              onClick={() => {
+                // TODO: Implement forgot password functionality
+                alert('Forgot password functionality will be implemented in Phase 3');
+              }}
+            >
+              Forgot your password?
+            </button>
+          </div>
         </form>
 
         <div className="mt-6 text-center">

@@ -1,4 +1,20 @@
 import { useState, useEffect } from 'react'
+import {
+  CheckCircle,
+  Building2,
+  DollarSign,
+  Clock,
+  Home,
+  Mountain,
+  Waves,
+  TreePine,
+  Castle,
+  Factory,
+  Anchor,
+  Ship,
+  MapPin,
+  Plus
+} from 'lucide-react'
 import { useSettings, formatCurrencyWholeNumber } from '../contexts/SettingsContext'
 import { API_URLS } from '../config/api'
 import { useApi } from '../hooks/useAuthenticatedFetch'
@@ -9,6 +25,29 @@ interface LocationSelectorProps {
   onLocationSelect: (locationId: string) => void
   onManageLocations: () => void
 }
+
+// Map emoji icons to lucide icons
+const getLocationIcon = (icon: string) => {
+  const iconMap: Record<string, React.ComponentType<any>> = {
+    '🏠': Home,
+    '🏢': Building2,
+    '🏔️': Mountain,
+    '🌊': Waves,
+    '🌲': TreePine,
+    '🏰': Castle,
+    '🏭': Factory,
+    '⚓': Anchor,
+    '🚢': Ship,
+    '⛵': Ship,
+    '🏖️': Waves,
+    '🏗️': Building2,
+    '🏘️': Home,
+    '🏡': Home,
+    '🏛️': Castle,
+  };
+
+  return iconMap[icon] || MapPin;
+};
 
 const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelectorProps) => {
   const { settings } = useSettings()
@@ -124,18 +163,28 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {locations.map(location => (
-          <div
+        {locations.map(location => {
+          const IconComponent = getLocationIcon(location.icon)
+          return (
+            <div
             key={location.id}
             onClick={() => onLocationSelect(location.id)}
             className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl border border-gray-200/50 hover:border-blue-200/50 cursor-pointer transition-all duration-300 hover:-translate-y-1 p-8"
           >
             <div className="text-center">
               <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg group-hover:shadow-xl transition-shadow duration-300"
-                style={{ backgroundColor: location.color + '20', borderColor: location.color + '30' }}
+                className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105"
+                style={{
+                  backgroundColor: location.color + '15',
+                  borderColor: location.color + '25',
+                  border: '2px solid'
+                }}
               >
-                <span className="text-4xl">{location.icon}</span>
+                <IconComponent
+                  size={32}
+                  style={{ color: location.color }}
+                  aria-label={location.name}
+                />
               </div>
 
               <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 mb-2">
@@ -145,16 +194,20 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
               <div className="space-y-2">
                 {/* Project counts */}
                 <div className="flex items-center justify-center text-sm text-gray-500 space-x-2">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <CheckCircle
+                    size={16}
+                    className="text-green-600"
+                    aria-hidden="true"
+                  />
                   <span className="text-green-600 font-medium">
                     {locationStats[location.id]?.completed?.projectCount || 0} done
                   </span>
                   <span className="text-gray-400">•</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
+                  <Building2
+                    size={16}
+                    className="text-gray-400"
+                    aria-hidden="true"
+                  />
                   <span>
                     {locationStats[location.id]?.notCompleted?.projectCount || 0} todo
                   </span>
@@ -162,9 +215,11 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
 
                 {/* Budget totals */}
                 <div className="flex items-center justify-center text-sm text-gray-500 space-x-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+                  <DollarSign
+                    size={16}
+                    className="text-gray-400"
+                    aria-hidden="true"
+                  />
                   <span className="text-green-600 font-medium">
                     {formatCurrencyWholeNumber(locationStats[location.id]?.completed?.totalBudget || 0, settings.currency)}
                   </span>
@@ -176,9 +231,11 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
 
                 {/* Time estimates */}
                 <div className="flex items-center justify-center text-sm text-gray-500 space-x-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Clock
+                    size={16}
+                    className="text-gray-400"
+                    aria-hidden="true"
+                  />
                   <span className="text-green-600 font-medium">
                     {locationStats[location.id]?.completed?.totalEstimatedDays || 0}d
                   </span>
@@ -190,7 +247,8 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
               </div>
             </div>
           </div>
-        ))}
+          )
+        })}
 
         {/* Add new location tile */}
         <div
@@ -198,9 +256,7 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
           className="group bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-dashed border-blue-200 hover:border-blue-300 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 p-8 flex flex-col items-center justify-center text-center"
         >
           <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors duration-200">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus size={32} className="text-blue-600" />
           </div>
           <h3 className="text-lg font-semibold text-blue-700 group-hover:text-blue-800 transition-colors duration-200 mb-2">
             Manage Locations

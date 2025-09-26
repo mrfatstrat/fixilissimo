@@ -31,7 +31,7 @@ router.post('/register', async (req, res) => {
   try {
     // Check if username already exists
     const dbInstance = getDb(req);
-    dbInstance.get('SELECT id FROM users WHERE username = ?', [username], async (err: any, row: any) => {
+    dbInstance.get('SELECT id FROM users WHERE username = ?', [username], async (err: Error | null, row?: User) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -46,7 +46,7 @@ router.post('/register', async (req, res) => {
       dbInstance.run(
         'INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)',
         [username, passwordHash, email || null],
-        function(this: any, err: any) {
+        function(this: { lastID: number }, err: Error | null) {
           if (err) {
             return res.status(500).json({ error: err.message });
           }
@@ -77,7 +77,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const dbInstance = getDb(req);
-    dbInstance.get('SELECT * FROM users WHERE username = ?', [username], async (err: any, row: User) => {
+    dbInstance.get('SELECT * FROM users WHERE username = ?', [username], async (err: Error | null, row?: User) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -117,7 +117,7 @@ router.get('/me', authenticateToken, (req: AuthenticatedRequest, res) => {
   }
 
   const dbInstance = getDb(req);
-  dbInstance.get('SELECT id, username, email, created_at FROM users WHERE id = ?', [req.user.id], (err: any, row: User) => {
+  dbInstance.get('SELECT id, username, email, created_at FROM users WHERE id = ?', [req.user.id], (err: Error | null, row?: User) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
