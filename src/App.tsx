@@ -176,16 +176,6 @@ function App() {
                     Welcome, {user.username}
                   </span>
 
-                  {/* Manage Locations button - visible on location selector view */}
-                  {view === 'locations' && (
-                    <button
-                      onClick={handleManageLocations}
-                      className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm font-medium"
-                    >
-                      Manage Locations
-                    </button>
-                  )}
-
                   {/* New Project button - visible when in project view */}
                   {view === 'projects' && (
                     <button

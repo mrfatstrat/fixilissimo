@@ -120,4 +120,18 @@ describe('App Component', () => {
     render(<App />)
     expect(screen.getByText(`Welcome, ${user.username}`)).toBeInTheDocument()
   })
+
+  it('should not display "Manage Locations" button in header when on locations view', () => {
+    mockAuthState.isAuthenticated = true
+    mockAuthState.user = { id: 1, username: 'testuser', email: 'test@example.com' }
+
+    render(<App />)
+
+    // Header should not have a "Manage Locations" button
+    const manageLocationButtons = screen.queryAllByRole('button', { name: /Manage Locations/i })
+
+    // There should be only one "Manage Locations" element (the tile in LocationSelector)
+    // not a button in the header
+    expect(manageLocationButtons.length).toBeLessThanOrEqual(1)
+  })
 })
