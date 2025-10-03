@@ -209,9 +209,8 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
 
               {/* Projects Progress */}
               <div className="space-y-2 mb-4">
-                <div className="text-sm text-gray-500 font-medium">Projects</div>
                 <div className="text-sm text-gray-700 mb-2">
-                  {completedCount} of {totalCount} done
+                  {completedCount} of {totalCount} projects done
                 </div>
                 <ProgressBar completed={completedCount} total={totalCount} />
               </div>

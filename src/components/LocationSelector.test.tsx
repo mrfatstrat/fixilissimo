@@ -1,0 +1,100 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import LocationSelector from './LocationSelector'
+import { createMockLocation } from '../test/utils'
+import * as AuthenticatedFetch from '../hooks/useAuthenticatedFetch'
+import * as SettingsContext from '../contexts/SettingsContext'
+
+// Mock the hooks
+vi.mock('../hooks/useAuthenticatedFetch')
+vi.mock('../contexts/SettingsContext')
+
+describe('LocationSelector - UI Tests', () => {
+  const mockLocations = [
+    createMockLocation({
+      id: 'kitchen',
+      name: 'Kitchen',
+      icon: '🏠',
+      color: '#3B82F6'
+    })
+  ]
+
+  const mockLocationStats = {
+    kitchen: {
+      completed: {
+        projectCount: 1,
+        totalBudget: 5000,
+        totalSpent: 4500,
+        totalEstimatedDays: 10
+      },
+      notCompleted: {
+        projectCount: 1,
+        totalBudget: 8000,
+        totalSpent: 0,
+        totalEstimatedDays: 15
+      },
+      projectCount: 2,
+      totalBudget: 13000,
+      totalSpent: 4500,
+      totalEstimatedDays: 25
+    }
+  }
+
+  const mockOnLocationSelect = vi.fn()
+  const mockOnManageLocations = vi.fn()
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    // Mock useApi hook
+    const mockGet = vi.fn()
+      .mockResolvedValueOnce(mockLocations) // First call for locations
+      .mockResolvedValueOnce(mockLocationStats) // Second call for stats
+
+    vi.mocked(AuthenticatedFetch.useApi).mockReturnValue({
+      get: mockGet,
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn()
+    })
+
+    // Mock useSettings hook
+    vi.mocked(SettingsContext.useSettings).mockReturnValue({
+      settings: {
+        currency: 'USD',
+        theme: 'light'
+      },
+      updateSettings: vi.fn()
+    })
+
+    // Mock formatCurrencyWholeNumber
+    vi.mocked(SettingsContext.formatCurrencyWholeNumber).mockImplementation(
+      (amount: number, currency: string) => {
+        return `$${amount.toLocaleString()}`
+      }
+    )
+  })
+
+  it('should display projects count in inline format: "X of Y projects done"', async () => {
+    render(
+      <LocationSelector
+        onLocationSelect={mockOnLocationSelect}
+        onManageLocations={mockOnManageLocations}
+      />
+    )
+
+    // Wait for the location to be rendered
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen')).toBeInTheDocument()
+    })
+
+    // Check for the inline format: "1 of 2 projects done"
+    await waitFor(() => {
+      expect(screen.getByText('1 of 2 projects done')).toBeInTheDocument()
+    })
+
+    // Ensure the old separate "Projects" label doesn't exist
+    const projectsLabels = screen.queryAllByText('Projects')
+    expect(projectsLabels).toHaveLength(0)
+  })
+})
