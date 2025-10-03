@@ -165,7 +165,7 @@ function App() {
                   Fixilissimo
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  the ultimate home fix tracker
+                  fixes & home project tracker
                 </p>
               </div>
             </div>
@@ -175,16 +175,6 @@ function App() {
                   <span className="text-sm text-gray-600 dark:text-gray-300">
                     Welcome, {user.username}
                   </span>
-
-                  {/* Manage Locations button - visible on location selector view */}
-                  {view === 'locations' && (
-                    <button
-                      onClick={handleManageLocations}
-                      className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm font-medium"
-                    >
-                      Manage Locations
-                    </button>
-                  )}
 
                   {/* New Project button - visible when in project view */}
                   {view === 'projects' && (

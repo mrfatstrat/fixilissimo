@@ -9,7 +9,7 @@ import * as SettingsContext from '../contexts/SettingsContext'
 vi.mock('../hooks/useAuthenticatedFetch')
 vi.mock('../contexts/SettingsContext')
 
-describe('LocationSelector - Issue #8: Location card spent field', () => {
+describe('LocationSelector - UI Tests', () => {
   const mockLocations = [
     createMockLocation({
       id: 'kitchen',
@@ -22,18 +22,18 @@ describe('LocationSelector - Issue #8: Location card spent field', () => {
   const mockLocationStats = {
     kitchen: {
       completed: {
-        projectCount: 2,
+        projectCount: 1,
         totalBudget: 5000,
-        totalSpent: 4500, // This is the value that should be shown as "Spent"
+        totalSpent: 4500,
         totalEstimatedDays: 10
       },
       notCompleted: {
-        projectCount: 3,
+        projectCount: 1,
         totalBudget: 8000,
-        totalSpent: 0, // Not completed projects typically have 0 spent
+        totalSpent: 0,
         totalEstimatedDays: 15
       },
-      projectCount: 5,
+      projectCount: 2,
       totalBudget: 13000,
       totalSpent: 4500,
       totalEstimatedDays: 25
@@ -75,7 +75,7 @@ describe('LocationSelector - Issue #8: Location card spent field', () => {
     )
   })
 
-  it('should display completed.totalSpent (not notCompleted.totalSpent) in the Spent field', async () => {
+  it('should not display the header text "Keep track of your home fix projects by location"', async () => {
     render(
       <LocationSelector
         onLocationSelect={mockOnLocationSelect}
@@ -88,19 +88,102 @@ describe('LocationSelector - Issue #8: Location card spent field', () => {
       expect(screen.getByText('Kitchen')).toBeInTheDocument()
     })
 
-    // Check that "Spent" shows the completed.totalSpent value (4500)
-    // NOT the notCompleted.totalSpent value (0)
-    await waitFor(() => {
-      const spentLabel = screen.getByText(/Spent:/)
-      expect(spentLabel).toBeInTheDocument()
+    // Verify the header text is not displayed
+    expect(screen.queryByText(/Keep track of your home fix projects by location/)).not.toBeInTheDocument()
+  })
 
-      // The spent value should be $4,500 (from completed projects)
-      // NOT $0 (from notCompleted projects)
-      expect(spentLabel.textContent).toContain('$4,500')
+  it('should display projects count in inline format: "X of Y projects done"', async () => {
+    render(
+      <LocationSelector
+        onLocationSelect={mockOnLocationSelect}
+        onManageLocations={mockOnManageLocations}
+      />
+    )
+
+    // Wait for the location to be rendered
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen')).toBeInTheDocument()
+    })
+
+    // Check for the inline format: "1 of 2 projects done"
+    await waitFor(() => {
+      expect(screen.getByText('1 of 2 projects done')).toBeInTheDocument()
+    })
+
+    // Ensure the old separate "Projects" label doesn't exist
+    const projectsLabels = screen.queryAllByText('Projects')
+    expect(projectsLabels).toHaveLength(0)
+  })
+
+  it('should not display Budget and Spent fields', async () => {
+    render(
+      <LocationSelector
+        onLocationSelect={mockOnLocationSelect}
+        onManageLocations={mockOnManageLocations}
+      />
+    )
+
+    // Wait for the location to be rendered
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen')).toBeInTheDocument()
+    })
+
+    // Verify Budget and Spent fields are not displayed
+    await waitFor(() => {
+      expect(screen.queryByText(/Budget:/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Spent:/)).not.toBeInTheDocument()
     })
   })
 
-  it('should display budget for notCompleted projects in the Budget field', async () => {
+  it('should display remaining work without "left" and without color coding', async () => {
+    render(
+      <LocationSelector
+        onLocationSelect={mockOnLocationSelect}
+        onManageLocations={mockOnManageLocations}
+      />
+    )
+
+    // Wait for the location to be rendered
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen')).toBeInTheDocument()
+    })
+
+    // Should show "15 days" not "15 days left"
+    await waitFor(() => {
+      expect(screen.getByText('15 days')).toBeInTheDocument()
+      expect(screen.queryByText(/days left/)).not.toBeInTheDocument()
+    })
+
+    // Verify no color classes are applied (should not have text-red, text-orange, text-green)
+    const remainingWorkText = screen.getByText('15 days')
+    expect(remainingWorkText.className).not.toMatch(/text-(red|orange|green)-/)
+  })
+
+  it('should display "0 days" when estimated work is zero or not set', async () => {
+    // Mock with zero estimated days
+    const mockLocationsZeroDays = [createMockLocation({ id: 'kitchen', name: 'Kitchen' })]
+    const mockStatsZeroDays = {
+      kitchen: {
+        completed: { projectCount: 1, totalBudget: 5000, totalSpent: 4500, totalEstimatedDays: 10 },
+        notCompleted: { projectCount: 1, totalBudget: 8000, totalSpent: 0, totalEstimatedDays: 0 },
+        projectCount: 2,
+        totalBudget: 13000,
+        totalSpent: 4500,
+        totalEstimatedDays: 25
+      }
+    }
+
+    const mockGet = vi.fn()
+      .mockResolvedValueOnce(mockLocationsZeroDays)
+      .mockResolvedValueOnce(mockStatsZeroDays)
+
+    vi.mocked(AuthenticatedFetch.useApi).mockReturnValue({
+      get: mockGet,
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn()
+    })
+
     render(
       <LocationSelector
         onLocationSelect={mockOnLocationSelect}
@@ -112,29 +195,11 @@ describe('LocationSelector - Issue #8: Location card spent field', () => {
       expect(screen.getByText('Kitchen')).toBeInTheDocument()
     })
 
-    // Check that "Budget" shows the notCompleted.totalBudget value (8000)
+    // Should show "0 days" not "No deadline" or "no clue!?"
     await waitFor(() => {
-      const budgetLabel = screen.getByText(/Budget:/)
-      expect(budgetLabel).toBeInTheDocument()
-      expect(budgetLabel.textContent).toContain('$8,000')
-    })
-  })
-
-  it('should correctly display completed vs total project counts', async () => {
-    render(
-      <LocationSelector
-        onLocationSelect={mockOnLocationSelect}
-        onManageLocations={mockOnManageLocations}
-      />
-    )
-
-    await waitFor(() => {
-      expect(screen.getByText('Kitchen')).toBeInTheDocument()
-    })
-
-    // Should show "2 of 5 done" (2 completed out of 5 total)
-    await waitFor(() => {
-      expect(screen.getByText('2 of 5 done')).toBeInTheDocument()
+      expect(screen.getByText('0 days')).toBeInTheDocument()
+      expect(screen.queryByText(/No deadline/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/no clue/)).not.toBeInTheDocument()
     })
   })
 })

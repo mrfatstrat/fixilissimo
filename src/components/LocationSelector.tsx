@@ -172,12 +172,6 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
 
   return (
     <div className="space-y-8">
-      <div className="text-center">
-        <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-          Keep track of your home fix projects by location
-        </p>
-      </div>
-
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {locations.map(location => {
           const IconComponent = getLocationIcon(location.icon)
@@ -209,36 +203,17 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
 
               {/* Projects Progress */}
               <div className="space-y-2 mb-4">
-                <div className="text-sm text-gray-500 font-medium">Projects</div>
                 <div className="text-sm text-gray-700 mb-2">
-                  {completedCount} of {totalCount} done
+                  {completedCount} of {totalCount} projects done
                 </div>
                 <ProgressBar completed={completedCount} total={totalCount} />
-              </div>
-
-              {/* Budget and Spent */}
-              <div className="flex justify-between items-center mb-4 text-sm">
-                <div>
-                  <div className="text-gray-500">Budget: {formatCurrencyWholeNumber(stats.notCompleted?.totalBudget || 0, settings.currency)}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Spent: {formatCurrencyWholeNumber(stats.completed?.totalSpent || 0, settings.currency)}</div>
-                </div>
               </div>
 
               {/* Remaining Work */}
               <div className="text-sm">
                 <span className="text-gray-500">Remaining work</span>
-                <span className={`ml-2 font-medium ${
-                  (stats.notCompleted?.totalEstimatedDays || 0) === 0
-                    ? 'text-green-600'
-                    : (stats.notCompleted?.totalEstimatedDays || 0) <= 1
-                      ? 'text-red-600'
-                      : 'text-orange-600'
-                }`}>
-                  {(stats.notCompleted?.totalEstimatedDays || 0) === 0
-                    ? 'No deadline'
-                    : `${stats.notCompleted?.totalEstimatedDays || 0} days left`}
+                <span className="ml-2 font-medium">
+                  {stats.notCompleted?.totalEstimatedDays || 0} days
                 </span>
               </div>
             </div>
