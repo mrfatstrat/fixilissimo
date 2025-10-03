@@ -75,6 +75,23 @@ describe('LocationSelector - UI Tests', () => {
     )
   })
 
+  it('should not display the header text "Keep track of your home fix projects by location"', async () => {
+    render(
+      <LocationSelector
+        onLocationSelect={mockOnLocationSelect}
+        onManageLocations={mockOnManageLocations}
+      />
+    )
+
+    // Wait for the location to be rendered
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen')).toBeInTheDocument()
+    })
+
+    // Verify the header text is not displayed
+    expect(screen.queryByText(/Keep track of your home fix projects by location/)).not.toBeInTheDocument()
+  })
+
   it('should display projects count in inline format: "X of Y projects done"', async () => {
     render(
       <LocationSelector

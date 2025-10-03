@@ -109,7 +109,7 @@ describe('App Component', () => {
 
     render(<App />)
     expect(screen.getByText('Fixilissimo')).toBeInTheDocument()
-    expect(screen.getByText('the ultimate home fix tracker')).toBeInTheDocument()
+    expect(screen.getByText('fixes & home project tracker')).toBeInTheDocument()
   })
 
   it('shows user welcome message when authenticated', () => {

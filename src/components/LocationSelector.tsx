@@ -172,12 +172,6 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
 
   return (
     <div className="space-y-8">
-      <div className="text-center">
-        <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-          Keep track of your home fix projects by location
-        </p>
-      </div>
-
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {locations.map(location => {
           const IconComponent = getLocationIcon(location.icon)
