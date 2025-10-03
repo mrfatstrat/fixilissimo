@@ -288,12 +288,25 @@ describe('Locations API', () => {
         .set(getAuthHeaders(authToken))
         .expect(200);
 
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toMatchObject({
-        id: 'living-room',
-        name: 'Living Room',
-        project_count: expect.any(Number),
+      expect(response.body).toBeInstanceOf(Object);
+      expect(response.body['living-room']).toBeDefined();
+      expect(response.body['living-room']).toMatchObject({
+        projectCount: expect.any(Number),
+        totalBudget: expect.any(Number),
+        totalSpent: expect.any(Number),
+        totalEstimatedDays: expect.any(Number),
+        completed: {
+          projectCount: expect.any(Number),
+          totalBudget: expect.any(Number),
+          totalSpent: expect.any(Number),
+          totalEstimatedDays: expect.any(Number),
+        },
+        notCompleted: {
+          projectCount: expect.any(Number),
+          totalBudget: expect.any(Number),
+          totalSpent: expect.any(Number),
+          totalEstimatedDays: expect.any(Number),
+        },
       });
     });
 

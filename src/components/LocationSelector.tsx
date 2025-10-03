@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
-  CheckCircle,
-  Building2,
-  DollarSign,
-  Clock,
   Home,
+  Building2,
   Mountain,
   Waves,
   TreePine,
@@ -19,6 +16,19 @@ import { useSettings, formatCurrencyWholeNumber } from '../contexts/SettingsCont
 import { API_URLS } from '../config/api'
 import { useApi } from '../hooks/useAuthenticatedFetch'
 import type { Location } from '../types'
+
+// Progress Bar Component
+const ProgressBar = ({ completed, total }: { completed: number; total: number }) => {
+  const percentage = total > 0 ? (completed / total) * 100 : 0
+  return (
+    <div className="w-full bg-gray-200 rounded-full h-2">
+      <div
+        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+        style={{ width: `${percentage}%` }}
+      />
+    </div>
+  )
+}
 
 
 interface LocationSelectorProps {
@@ -58,15 +68,18 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
     completed: {
       projectCount: number;
       totalBudget: number;
+      totalSpent: number;
       totalEstimatedDays: number;
     };
     notCompleted: {
       projectCount: number;
       totalBudget: number;
+      totalSpent: number;
       totalEstimatedDays: number;
     };
     projectCount: number;
     totalBudget: number;
+    totalSpent: number;
     totalEstimatedDays: number;
   }>>({})
   const [loading, setLoading] = useState(true)
@@ -94,15 +107,18 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
             completed: {
               projectCount: 0,
               totalBudget: 0,
+              totalSpent: 0,
               totalEstimatedDays: 0
             },
             notCompleted: {
               projectCount: 0,
               totalBudget: 0,
+              totalSpent: 0,
               totalEstimatedDays: 0
             },
             projectCount: 0,
             totalBudget: 0,
+            totalSpent: 0,
             totalEstimatedDays: 0
           }
           return acc
@@ -165,88 +181,67 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {locations.map(location => {
           const IconComponent = getLocationIcon(location.icon)
+          const stats = locationStats[location.id] || {
+            completed: { projectCount: 0 },
+            notCompleted: { projectCount: 0, totalBudget: 0, totalSpent: 0, totalEstimatedDays: 0 },
+            projectCount: 0
+          }
+          const completedCount = stats.completed?.projectCount || 0
+          const totalCount = stats.projectCount || 0
+
           return (
             <div
-            key={location.id}
-            onClick={() => onLocationSelect(location.id)}
-            className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl border border-gray-200/50 hover:border-blue-200/50 cursor-pointer transition-all duration-300 hover:-translate-y-1 p-8"
-          >
-            <div className="text-center">
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105"
-                style={{
-                  backgroundColor: location.color + '15',
-                  borderColor: location.color + '25',
-                  border: '2px solid'
-                }}
-              >
+              key={location.id}
+              onClick={() => onLocationSelect(location.id)}
+              className="group bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-200 cursor-pointer transition-all duration-200 p-6"
+            >
+              {/* Header with icon and name */}
+              <div className="flex items-center gap-3 mb-6">
                 <IconComponent
-                  size={32}
+                  size={28}
                   style={{ color: location.color }}
                   aria-label={location.name}
                 />
+                <h3 className="text-xl font-bold text-gray-900">
+                  {location.name}
+                </h3>
               </div>
 
-              <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 mb-2">
-                {location.name}
-              </h3>
-
-              <div className="space-y-2">
-                {/* Project counts */}
-                <div className="flex items-center justify-center text-sm text-gray-500 space-x-2">
-                  <CheckCircle
-                    size={16}
-                    className="text-green-600"
-                    aria-hidden="true"
-                  />
-                  <span className="text-green-600 font-medium">
-                    {locationStats[location.id]?.completed?.projectCount || 0} done
-                  </span>
-                  <span className="text-gray-400">•</span>
-                  <Building2
-                    size={16}
-                    className="text-gray-400"
-                    aria-hidden="true"
-                  />
-                  <span>
-                    {locationStats[location.id]?.notCompleted?.projectCount || 0} todo
-                  </span>
+              {/* Projects Progress */}
+              <div className="space-y-2 mb-4">
+                <div className="text-sm text-gray-500 font-medium">Projects</div>
+                <div className="text-sm text-gray-700 mb-2">
+                  {completedCount} of {totalCount} done
                 </div>
+                <ProgressBar completed={completedCount} total={totalCount} />
+              </div>
 
-                {/* Budget totals */}
-                <div className="flex items-center justify-center text-sm text-gray-500 space-x-2">
-                  <DollarSign
-                    size={16}
-                    className="text-gray-400"
-                    aria-hidden="true"
-                  />
-                  <span className="text-green-600 font-medium">
-                    {formatCurrencyWholeNumber(locationStats[location.id]?.completed?.totalBudget || 0, settings.currency)}
-                  </span>
-                  <span className="text-gray-400">•</span>
-                  <span>
-                    {formatCurrencyWholeNumber(locationStats[location.id]?.notCompleted?.totalBudget || 0, settings.currency)}
-                  </span>
+              {/* Budget and Spent */}
+              <div className="flex justify-between items-center mb-4 text-sm">
+                <div>
+                  <div className="text-gray-500">Budget: {formatCurrencyWholeNumber(stats.notCompleted?.totalBudget || 0, settings.currency)}</div>
                 </div>
+                <div>
+                  <div className="text-gray-500">Spent: {formatCurrencyWholeNumber(stats.notCompleted?.totalSpent || 0, settings.currency)}</div>
+                </div>
+              </div>
 
-                {/* Time estimates */}
-                <div className="flex items-center justify-center text-sm text-gray-500 space-x-2">
-                  <Clock
-                    size={16}
-                    className="text-gray-400"
-                    aria-hidden="true"
-                  />
-                  <span className="text-green-600 font-medium">
-                    {locationStats[location.id]?.completed?.totalEstimatedDays || 0}d
-                  </span>
-                  <span className="text-gray-400">•</span>
-                  <span>
-                    {locationStats[location.id]?.notCompleted?.totalEstimatedDays || 0}d
-                  </span>
-                </div>
+              {/* Remaining Work */}
+              <div className="text-sm">
+                <span className="text-gray-500">Remaining work</span>
+                <span className={`ml-2 font-medium ${
+                  (stats.notCompleted?.totalEstimatedDays || 0) === 0
+                    ? 'text-green-600'
+                    : (stats.notCompleted?.totalEstimatedDays || 0) <= 1
+                      ? 'text-red-600'
+                      : 'text-orange-600'
+                }`}>
+                  {(stats.notCompleted?.totalEstimatedDays || 0) === 0
+                    ? 'No deadline'
+                    : `${stats.notCompleted?.totalEstimatedDays || 0} days left`}
+                </span>
               </div>
             </div>
-          </div>
           )
         })}
 

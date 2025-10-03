@@ -89,6 +89,7 @@ const initializeSchema = async (db: Database): Promise<void> => {
       estimated_days INTEGER,
       doer TEXT,
       image_filename TEXT,
+      actual_cost REAL,
       user_id INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,

@@ -21,6 +21,7 @@ interface Project {
   estimated_days?: number;
   doer?: string;
   image_filename?: string;
+  actual_cost?: number;
 }
 
 const router = Router();
@@ -84,8 +85,8 @@ export default function projectRoutes(upload: Multer) {
     }
 
     const query = `
-      INSERT INTO projects (name, description, category, location, status, start_month, start_year, budget, estimated_days, doer, image_filename, user_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO projects (name, description, category, location, status, start_month, start_year, budget, estimated_days, doer, image_filename, actual_cost, user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const params = [
       project.name,
@@ -99,6 +100,7 @@ export default function projectRoutes(upload: Multer) {
       project.estimated_days || null,
       project.doer || 'me',
       project.image_filename || null,
+      project.actual_cost || null,
       req.user!.id
     ];
 
@@ -134,7 +136,7 @@ export default function projectRoutes(upload: Multer) {
 
     const query = `
       UPDATE projects
-      SET name = ?, description = ?, category = ?, location = ?, status = ?, start_month = ?, start_year = ?, budget = ?, estimated_days = ?, doer = ?, image_filename = ?, updated_at = CURRENT_TIMESTAMP
+      SET name = ?, description = ?, category = ?, location = ?, status = ?, start_month = ?, start_year = ?, budget = ?, estimated_days = ?, doer = ?, image_filename = ?, actual_cost = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ? AND user_id = ?
     `;
     const params = [
@@ -149,6 +151,7 @@ export default function projectRoutes(upload: Multer) {
       project.estimated_days || null,
       project.doer || 'me',
       project.image_filename || null,
+      project.actual_cost || null,
       id,
       req.user!.id
     ];

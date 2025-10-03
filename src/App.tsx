@@ -3,7 +3,8 @@ import {
   Building2,
   LogOut,
   Settings as SettingsIcon,
-  ChevronLeft
+  ChevronLeft,
+  Plus
 } from 'lucide-react'
 import ProjectList from './components/ProjectList'
 import ProjectForm from './components/ProjectForm'
@@ -170,10 +171,40 @@ function App() {
             </div>
             <div className="flex items-center space-x-3">
               {user && (
-                <div className="flex items-center space-x-3">
+                <>
                   <span className="text-sm text-gray-600 dark:text-gray-300">
                     Welcome, {user.username}
                   </span>
+
+                  {/* Manage Locations button - visible on location selector view */}
+                  {view === 'locations' && (
+                    <button
+                      onClick={handleManageLocations}
+                      className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm font-medium"
+                    >
+                      Manage Locations
+                    </button>
+                  )}
+
+                  {/* New Project button - visible when in project view */}
+                  {view === 'projects' && (
+                    <button
+                      onClick={handleCreateProject}
+                      className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 text-sm font-medium flex items-center gap-2"
+                    >
+                      <Plus size={18} />
+                      New Project
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors duration-200"
+                    title="Settings"
+                  >
+                    <SettingsIcon size={20} />
+                  </button>
+
                   <button
                     onClick={logout}
                     className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors duration-200"
@@ -181,16 +212,7 @@ function App() {
                   >
                     <LogOut size={20} />
                   </button>
-                </div>
-              )}
-              {view === 'locations' && (
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors duration-200"
-                  title="Settings"
-                >
-                  <SettingsIcon size={20} />
-                </button>
+                </>
               )}
             </div>
           </div>

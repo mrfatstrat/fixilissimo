@@ -27,27 +27,93 @@ router.get('/', authenticateToken, (req: AuthenticatedRequest, res) => {
 
 // Get bulk stats for all locations (optimized single call)
 router.get('/stats', authenticateToken, (req: AuthenticatedRequest, res) => {
-  const query = `
-    SELECT
-      l.id,
-      l.name,
-      l.icon,
-      l.color,
-      COUNT(p.id) as project_count
-    FROM locations l
-    LEFT JOIN projects p ON l.id = p.location
-    WHERE l.user_id = ?
-    GROUP BY l.id, l.name, l.icon, l.color
-    ORDER BY l.created_at ASC
-  `;
-
   const dbInstance = getDb(req);
-  dbInstance.all(query, [req.user!.id], (err: any, rows: any[]) => {
+
+  // First get all locations for this user
+  dbInstance.all('SELECT id FROM locations WHERE user_id = ?', [req.user!.id], (err: any, locations: any[]) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
 
-    res.json(rows);
+    if (!locations || locations.length === 0) {
+      return res.json({});
+    }
+
+    // Get comprehensive stats for all locations
+    const statsQuery = `
+      SELECT
+        p.location,
+        p.status,
+        COUNT(*) as count,
+        COALESCE(SUM(p.budget), 0) as totalBudget,
+        COALESCE(SUM(p.actual_cost), 0) as totalSpent,
+        COALESCE(SUM(p.estimated_days), 0) as totalEstimatedDays
+      FROM projects p
+      WHERE p.user_id = ?
+      GROUP BY p.location, p.status
+    `;
+
+    dbInstance.all(statsQuery, [req.user!.id], (err: any, rows: any[]) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Organize stats by location
+      const stats: any = {};
+
+      // Initialize all locations with zero stats
+      locations.forEach(loc => {
+        stats[loc.id] = {
+          completed: {
+            projectCount: 0,
+            totalBudget: 0,
+            totalSpent: 0,
+            totalEstimatedDays: 0
+          },
+          notCompleted: {
+            projectCount: 0,
+            totalBudget: 0,
+            totalSpent: 0,
+            totalEstimatedDays: 0
+          },
+          projectCount: 0,
+          totalBudget: 0,
+          totalSpent: 0,
+          totalEstimatedDays: 0
+        };
+      });
+
+      // Populate stats from query results
+      rows.forEach((row: any) => {
+        const locationId = row.location;
+        if (!stats[locationId]) {
+          stats[locationId] = {
+            completed: { projectCount: 0, totalBudget: 0, totalSpent: 0, totalEstimatedDays: 0 },
+            notCompleted: { projectCount: 0, totalBudget: 0, totalSpent: 0, totalEstimatedDays: 0 },
+            projectCount: 0,
+            totalBudget: 0,
+            totalSpent: 0,
+            totalEstimatedDays: 0
+          };
+        }
+
+        const isCompleted = row.status === 'completed';
+        const targetKey = isCompleted ? 'completed' : 'notCompleted';
+
+        stats[locationId][targetKey].projectCount += row.count;
+        stats[locationId][targetKey].totalBudget += row.totalBudget || 0;
+        stats[locationId][targetKey].totalSpent += row.totalSpent || 0;
+        stats[locationId][targetKey].totalEstimatedDays += row.totalEstimatedDays || 0;
+
+        // Update totals
+        stats[locationId].projectCount += row.count;
+        stats[locationId].totalBudget += row.totalBudget || 0;
+        stats[locationId].totalSpent += row.totalSpent || 0;
+        stats[locationId].totalEstimatedDays += row.totalEstimatedDays || 0;
+      });
+
+      res.json(stats);
+    });
   });
 });
 
