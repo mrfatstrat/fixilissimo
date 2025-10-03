@@ -26,6 +26,7 @@ export interface Project {
   estimated_days?: number;
   doer?: 'me' | 'pro';
   image_filename?: string;
+  actual_cost?: number;
   created_at?: string;
   updated_at?: string;
 }

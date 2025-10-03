@@ -75,6 +75,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
     budget: undefined,
     estimated_days: undefined,
     doer: 'me',
+    actual_cost: undefined,
   })
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [locations, setLocations] = useState<Location[]>([])
@@ -181,7 +182,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'budget' || name === 'estimated_days' || name.includes('month') || name.includes('year')
+      [name]: name === 'budget' || name === 'estimated_days' || name === 'actual_cost' || name.includes('month') || name.includes('year')
         ? value ? parseInt(value) || parseFloat(value) : undefined
         : value
     }))
@@ -343,7 +344,7 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <label htmlFor="budget" className="block text-sm font-semibold text-gray-700 mb-2">
                   Budget (Optional)
@@ -372,6 +373,47 @@ const ProjectForm = ({ project, onClose, onSubmit }: ProjectFormProps) => {
                           min="0"
                           step="0.01"
                           value={formData.budget || ''}
+                          onChange={handleChange}
+                          className={`w-full border border-gray-200 rounded-xl py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white/70 backdrop-blur-sm transition-all duration-200 text-gray-900 ${
+                            isSymbolBefore ? 'pl-8 pr-4' : 'pl-4 pr-8'
+                          }`}
+                          placeholder="0.00"
+                        />
+                      </>
+                    )
+                  })()
+                  }
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="actual_cost" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Actual Cost (Optional)
+                </label>
+                <div className="relative">
+                  {(() => {
+                    const config = currencyConfig[settings.currency] || currencyConfig.USD
+                    const isSymbolBefore = config.position === 'before'
+
+                    return (
+                      <>
+                        {isSymbolBefore && (
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                            {config.symbol}
+                          </span>
+                        )}
+                        {!isSymbolBefore && (
+                          <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                            {config.symbol}
+                          </span>
+                        )}
+                        <input
+                          type="number"
+                          id="actual_cost"
+                          name="actual_cost"
+                          min="0"
+                          step="0.01"
+                          value={formData.actual_cost || ''}
                           onChange={handleChange}
                           className={`w-full border border-gray-200 rounded-xl py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white/70 backdrop-blur-sm transition-all duration-200 text-gray-900 ${
                             isSymbolBefore ? 'pl-8 pr-4' : 'pl-4 pr-8'

@@ -46,7 +46,8 @@ export const initDatabase = () => {
       'ALTER TABLE projects ADD COLUMN doer TEXT DEFAULT "me"',
       'ALTER TABLE projects ADD COLUMN image_filename TEXT',
       'ALTER TABLE locations ADD COLUMN user_id INTEGER REFERENCES users(id)',
-      'ALTER TABLE projects ADD COLUMN user_id INTEGER REFERENCES users(id)'
+      'ALTER TABLE projects ADD COLUMN user_id INTEGER REFERENCES users(id)',
+      'ALTER TABLE projects ADD COLUMN actual_cost DECIMAL(10,2)'
     ];
 
     alterCommands.forEach(command => {
