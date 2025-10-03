@@ -218,16 +218,8 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
               {/* Remaining Work */}
               <div className="text-sm">
                 <span className="text-gray-500">Remaining work</span>
-                <span className={`ml-2 font-medium ${
-                  (stats.notCompleted?.totalEstimatedDays || 0) === 0
-                    ? 'text-green-600'
-                    : (stats.notCompleted?.totalEstimatedDays || 0) <= 1
-                      ? 'text-red-600'
-                      : 'text-orange-600'
-                }`}>
-                  {(stats.notCompleted?.totalEstimatedDays || 0) === 0
-                    ? 'No deadline'
-                    : `${stats.notCompleted?.totalEstimatedDays || 0} days left`}
+                <span className="ml-2 font-medium">
+                  {stats.notCompleted?.totalEstimatedDays || 0} days
                 </span>
               </div>
             </div>

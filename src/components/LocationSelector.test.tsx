@@ -117,4 +117,72 @@ describe('LocationSelector - UI Tests', () => {
       expect(screen.queryByText(/Spent:/)).not.toBeInTheDocument()
     })
   })
+
+  it('should display remaining work without "left" and without color coding', async () => {
+    render(
+      <LocationSelector
+        onLocationSelect={mockOnLocationSelect}
+        onManageLocations={mockOnManageLocations}
+      />
+    )
+
+    // Wait for the location to be rendered
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen')).toBeInTheDocument()
+    })
+
+    // Should show "15 days" not "15 days left"
+    await waitFor(() => {
+      expect(screen.getByText('15 days')).toBeInTheDocument()
+      expect(screen.queryByText(/days left/)).not.toBeInTheDocument()
+    })
+
+    // Verify no color classes are applied (should not have text-red, text-orange, text-green)
+    const remainingWorkText = screen.getByText('15 days')
+    expect(remainingWorkText.className).not.toMatch(/text-(red|orange|green)-/)
+  })
+
+  it('should display "0 days" when estimated work is zero or not set', async () => {
+    // Mock with zero estimated days
+    const mockLocationsZeroDays = [createMockLocation({ id: 'kitchen', name: 'Kitchen' })]
+    const mockStatsZeroDays = {
+      kitchen: {
+        completed: { projectCount: 1, totalBudget: 5000, totalSpent: 4500, totalEstimatedDays: 10 },
+        notCompleted: { projectCount: 1, totalBudget: 8000, totalSpent: 0, totalEstimatedDays: 0 },
+        projectCount: 2,
+        totalBudget: 13000,
+        totalSpent: 4500,
+        totalEstimatedDays: 25
+      }
+    }
+
+    const mockGet = vi.fn()
+      .mockResolvedValueOnce(mockLocationsZeroDays)
+      .mockResolvedValueOnce(mockStatsZeroDays)
+
+    vi.mocked(AuthenticatedFetch.useApi).mockReturnValue({
+      get: mockGet,
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn()
+    })
+
+    render(
+      <LocationSelector
+        onLocationSelect={mockOnLocationSelect}
+        onManageLocations={mockOnManageLocations}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen')).toBeInTheDocument()
+    })
+
+    // Should show "0 days" not "No deadline" or "no clue!?"
+    await waitFor(() => {
+      expect(screen.getByText('0 days')).toBeInTheDocument()
+      expect(screen.queryByText(/No deadline/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/no clue/)).not.toBeInTheDocument()
+    })
+  })
 })
