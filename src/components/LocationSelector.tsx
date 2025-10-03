@@ -222,7 +222,7 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
                   <div className="text-gray-500">Budget: {formatCurrencyWholeNumber(stats.notCompleted?.totalBudget || 0, settings.currency)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500">Spent: {formatCurrencyWholeNumber(stats.notCompleted?.totalSpent || 0, settings.currency)}</div>
+                  <div className="text-gray-500">Spent: {formatCurrencyWholeNumber(stats.completed?.totalSpent || 0, settings.currency)}</div>
                 </div>
               </div>
 
