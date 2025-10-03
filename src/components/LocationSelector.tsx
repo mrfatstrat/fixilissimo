@@ -215,16 +215,6 @@ const LocationSelector = ({ onLocationSelect, onManageLocations }: LocationSelec
                 <ProgressBar completed={completedCount} total={totalCount} />
               </div>
 
-              {/* Budget and Spent */}
-              <div className="flex justify-between items-center mb-4 text-sm">
-                <div>
-                  <div className="text-gray-500">Budget: {formatCurrencyWholeNumber(stats.notCompleted?.totalBudget || 0, settings.currency)}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Spent: {formatCurrencyWholeNumber(stats.notCompleted?.totalSpent || 0, settings.currency)}</div>
-                </div>
-              </div>
-
               {/* Remaining Work */}
               <div className="text-sm">
                 <span className="text-gray-500">Remaining work</span>

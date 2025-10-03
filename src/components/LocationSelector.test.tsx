@@ -97,4 +97,24 @@ describe('LocationSelector - UI Tests', () => {
     const projectsLabels = screen.queryAllByText('Projects')
     expect(projectsLabels).toHaveLength(0)
   })
+
+  it('should not display Budget and Spent fields', async () => {
+    render(
+      <LocationSelector
+        onLocationSelect={mockOnLocationSelect}
+        onManageLocations={mockOnManageLocations}
+      />
+    )
+
+    // Wait for the location to be rendered
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen')).toBeInTheDocument()
+    })
+
+    // Verify Budget and Spent fields are not displayed
+    await waitFor(() => {
+      expect(screen.queryByText(/Budget:/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Spent:/)).not.toBeInTheDocument()
+    })
+  })
 })
